@@ -16,9 +16,9 @@ DATABASES = {
         "ENGINE": "django_tenants.postgresql_backend",
         "NAME": env("PGDATABASE", default="hotel_cad_bd"),#type:ignore
         "USER": env("PGUSER", default="postgres"),#type:ignore
-        "PASSWORD": env("PGPASSWORD", default="1234"),#type:ignore
+        "PASSWORD": env("PGPASSWORD", default="admin"),#type:ignore
         "HOST": env("PGHOST", default="127.0.0.1"),#type:ignore
-        "PORT": env("PGPORT", default="5432"),#type:ignore
+        "PORT": env("PGPORT", default="5433"),#type:ignore
     }
 }
 
@@ -32,6 +32,8 @@ SHARED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     #'django.contrib.admin',
+    'apps.hoteles',
+    'apps.habitaciones',
 ]
 TENANT_APPS = [
     'django.contrib.contenttypes',

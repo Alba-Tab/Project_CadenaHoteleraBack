@@ -7,4 +7,6 @@ router.register("usuarios", UserViewSet, basename="usuario")
 
 urlpatterns = [
     path("api/", include(router.urls)),
+    path('api/hoteles/', include('apps.hoteles.urls')),
+    path('api/habitaciones/', include('apps.habitaciones.urls')),
 ]
