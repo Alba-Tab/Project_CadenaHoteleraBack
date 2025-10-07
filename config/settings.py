@@ -9,7 +9,7 @@ SECRET_KEY = env.str("SECRET_KEY", default="secretos") #type:ignore
 
 DEBUG = env.bool("DEBUG", default=True) #type:ignore
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost']
 
 DATABASES = {
     "default": {
@@ -32,8 +32,7 @@ SHARED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     #'django.contrib.admin',
-    'apps.hoteles',
-    'apps.habitaciones',
+    
 ]
 TENANT_APPS = [
     'django.contrib.contenttypes',
@@ -41,6 +40,8 @@ TENANT_APPS = [
     'rest_framework',
     'apps.usuarios',  # your tenant-specific apps
     'django.contrib.admin',
+    'apps.hoteles',
+    'apps.habitaciones',
 ]
 
 

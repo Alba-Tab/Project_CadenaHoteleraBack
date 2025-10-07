@@ -9,3 +9,4 @@ class Client(TenantMixin):
 
 class Domain(DomainMixin):
     pass
+
