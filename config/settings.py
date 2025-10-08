@@ -32,6 +32,7 @@ SHARED_APPS = [
     'django.contrib.staticfiles',
     #'django.contrib.admin',
     'rest_framework',
+    'corsheaders'
     
 ]
 TENANT_APPS = [
@@ -53,6 +54,7 @@ DATABASE_ROUTERS = ("django_tenants.routers.TenantSyncRouter",)
 
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware", 
     "django_tenants.middleware.TenantMainMiddleware",
     'config.middleware.middleware_force_urlconf.ForcetenantUrlconfMiddleware', 
     'django.middleware.security.SecurityMiddleware',
@@ -69,6 +71,10 @@ PUBLIC_SCHEMA_URLCONF = "config.urls_public"
 TENANT_URLCONF = "config.urls_tenant"
 
 AUTH_USER_MODEL = "usuarios.User"
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
 
 
 TEMPLATES = [
