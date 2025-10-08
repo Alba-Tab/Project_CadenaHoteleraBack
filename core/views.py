@@ -2,12 +2,19 @@ from rest_framework import viewsets, status
 from rest_framework.permissions import AllowAny
 from core.models import Tenant
 from rest_framework.response import Response
-from core.serializers import TenantSerializer
+from core.serializers import TenantSerializer, TenantModelSerializer
 from core.services import TenantService
 
 
 class TenantViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
+    queryset = Tenant.objects.all()               # ← necesario para list/retrieve
+    serializer_class = TenantSerializer 
+      
+    def get_serializer_class(self):
+        if self.action == "create":
+            return TenantSerializer
+        return TenantModelSerializer
     
     def create(self, request, *args, **kwargs):
         serializer = TenantSerializer(data=request.data)

@@ -5,6 +5,11 @@ from core.models import Tenant, Domain
 import re
 
 DEFAULT_BASE_DOMAIN = getattr(settings, "TENANT_BASE_DOMAIN", "hotelapp.localhost")
+class TenantModelSerializer(serializers.ModelSerializer):
+    # Serializer para devolver Tenant en list/retrieve (solo campos que EXISTEN en el modelo)
+    class Meta:
+        model = Tenant
+        fields = "__all__"
 class TenantSerializer(serializers.ModelSerializer):
     # Datos del formulario público
     first_name = serializers.CharField(max_length=150)
@@ -39,12 +44,14 @@ class TenantSerializer(serializers.ModelSerializer):
         if sub == "public":
             raise serializers.ValidationError({"subdominio": "El subdominio 'public' está reservado."})
 
-        base_domain = DEFAULT_BASE_DOMAIN
-        full_domain = f"{sub}.{base_domain}"
+        full_domain = f"{sub}.{DEFAULT_BASE_DOMAIN}"
 
         if Domain.objects.filter(domain=full_domain).exists():
             raise serializers.ValidationError({"subdominio": "El dominio ya existe. Elige otro subdominio."})
-
+        
+        attrs["schema_name"] = sub
+        attrs["domain"] = full_domain
+        
         if ":" in full_domain or full_domain.startswith("www."):
             raise serializers.ValidationError({"subdominio": "No incluir puerto ni 'www' en el dominio."})
 
