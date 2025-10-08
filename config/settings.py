@@ -24,7 +24,7 @@ DATABASES = {
 # Application definition
 SHARED_APPS = [
     'django_tenants',
-    'customers',
+    'core',
     'django.contrib.contenttypes',
     #'django.contrib.auth',
     'django.contrib.sessions',
@@ -46,15 +46,15 @@ TENANT_APPS = [
 
 
 INSTALLED_APPS = list(dict.fromkeys(SHARED_APPS + TENANT_APPS))
-TENANT_MODEL = "customers.Client"
-TENANT_DOMAIN_MODEL = "customers.Domain"
+TENANT_MODEL = "core.Tenant"
+TENANT_DOMAIN_MODEL = "core.Domain"
 
 DATABASE_ROUTERS = ("django_tenants.routers.TenantSyncRouter",)
 
 
 MIDDLEWARE = [
     "django_tenants.middleware.TenantMainMiddleware",
-    'config.middleware.middleware_force_urlconf.ForceclientUrlconfMiddleware', 
+    'config.middleware.middleware_force_urlconf.ForcetenantUrlconfMiddleware', 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

@@ -2,11 +2,11 @@ from django.utils.deprecation import MiddlewareMixin
 from django.conf import settings
 from django.db import connection
 
-class ForceclientUrlconfMiddleware(MiddlewareMixin):
+class ForcetenantUrlconfMiddleware(MiddlewareMixin):
     """
     Asegura que Django use el URLConf correcto según el esquema activo.
     Si el esquema es 'public' -> usa PUBLIC_SCHEMA_URLCONF.
-    Si es cualquier otro -> usa client_URLCONF.
+    Si es cualquier otro -> usa Tenant_URLCONF.
     """
 
     def process_request(self, request):
