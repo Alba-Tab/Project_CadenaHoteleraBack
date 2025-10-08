@@ -10,3 +10,4 @@ urlpatterns = [
     path('api/habitaciones/', include('apps.habitaciones.urls')),
     path("", include("apps.usuarios.urls")),
 ]
+

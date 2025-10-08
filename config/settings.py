@@ -9,7 +9,7 @@ SECRET_KEY = env.str("SECRET_KEY", default="secretos") #type:ignore
 
 DEBUG = env.bool("DEBUG", default=True) #type:ignore
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['hotelsol.localhost', 'localhost', '127.0.0.1']
 
 DATABASES = {
     "default": {
