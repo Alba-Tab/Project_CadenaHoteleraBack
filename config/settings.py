@@ -67,6 +67,7 @@ MIDDLEWARE = [
 ROOT_URLCONF = "config.urls_public"
 PUBLIC_SCHEMA_URLCONF = "config.urls_public"
 TENANT_URLCONF = "config.urls_tenant"
+TENANT_BASE_DOMAIN = env.str("TENANT_BASE_DOMAIN", default="localhost") #type:ignore
 
 AUTH_USER_MODEL = "usuarios.User"
 
