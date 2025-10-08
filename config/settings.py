@@ -9,8 +9,7 @@ SECRET_KEY = env.str("SECRET_KEY", default="secretos") #type:ignore
 
 DEBUG = env.bool("DEBUG", default=True) #type:ignore
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"]) #type:ignore
 DATABASES = {
     "default": {
         "ENGINE": "django_tenants.postgresql_backend",
@@ -32,6 +31,7 @@ SHARED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     #'django.contrib.admin',
+    'rest_framework',
     
 ]
 TENANT_APPS = [
@@ -54,6 +54,7 @@ DATABASE_ROUTERS = ("django_tenants.routers.TenantSyncRouter",)
 
 MIDDLEWARE = [
     "django_tenants.middleware.TenantMainMiddleware",
+    'config.middleware.middleware_force_urlconf.ForceclientUrlconfMiddleware', 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
