@@ -9,8 +9,7 @@ SECRET_KEY = env.str("SECRET_KEY", default="secretos") #type:ignore
 
 DEBUG = env.bool("DEBUG", default=True) #type:ignore
 
-ALLOWED_HOSTS = ['hotelsol.localhost', 'localhost', '127.0.0.1']
-
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"]) #type:ignore
 DATABASES = {
     "default": {
         "ENGINE": "django_tenants.postgresql_backend",
@@ -25,13 +24,14 @@ DATABASES = {
 # Application definition
 SHARED_APPS = [
     'django_tenants',
-    'customers',
+    'core',
     'django.contrib.contenttypes',
     #'django.contrib.auth',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     #'django.contrib.admin',
+    'rest_framework',
     
 ]
 TENANT_APPS = [
@@ -46,14 +46,15 @@ TENANT_APPS = [
 
 
 INSTALLED_APPS = list(dict.fromkeys(SHARED_APPS + TENANT_APPS))
-TENANT_MODEL = "customers.Client"
-TENANT_DOMAIN_MODEL = "customers.Domain"
+TENANT_MODEL = "core.Tenant"
+TENANT_DOMAIN_MODEL = "core.Domain"
 
 DATABASE_ROUTERS = ("django_tenants.routers.TenantSyncRouter",)
 
 
 MIDDLEWARE = [
     "django_tenants.middleware.TenantMainMiddleware",
+    'config.middleware.middleware_force_urlconf.ForcetenantUrlconfMiddleware', 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

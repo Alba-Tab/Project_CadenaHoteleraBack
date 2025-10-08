@@ -1,7 +1,7 @@
 from rest_framework.routers import DefaultRouter
-from .views import ClientViewSet
+from .views import TenantViewSet
 
 router = DefaultRouter()
-router.register("tenants", ClientViewSet, basename="tenant")
+router.register("tenants", TenantViewSet, basename="tenant")
 
 urlpatterns = router.urls
