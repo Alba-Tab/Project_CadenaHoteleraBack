@@ -51,6 +51,14 @@ TENANT_DOMAIN_MODEL = "core.Domain"
 
 DATABASE_ROUTERS = ("django_tenants.routers.TenantSyncRouter",)
 
+# Email settings                           django.core.mail.backends.console.EmailBackend
+EMAIL_BACKEND = env.str('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')#type:ignore
+EMAIL_HOST = env.str('EMAIL_HOST', default='smtp.gmail.com')#type:ignore
+EMAIL_PORT = env.int('EMAIL_PORT', default=587)#type:ignore
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)#type:ignore
+EMAIL_HOST_USER = env.str('EMAIL_HOST_USER', default='brayan.123.bg76@gmail.com')#type:ignore
+EMAIL_HOST_PASSWORD = env.str('EMAIL_HOST_PASSWORD', default='')#type:ignore
+DEFAULT_FROM_EMAIL = env.str('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)#type:ignore
 
 MIDDLEWARE = [
     "django_tenants.middleware.TenantMainMiddleware",
