@@ -84,7 +84,7 @@ Si modificas modelos, genera y versiona las migraciones:
 
 ```bash
 python manage.py makemigrations
-git add apps/*/migrations/*.py
+git add apps/*core*.py
 git commit -m "Agregadas migraciones para [descripción]"
 git push
 ```
@@ -189,10 +189,10 @@ python manage.py shell
 Dentro de la shell de Python:
 
 ```python
-from customers.models import Client, Domain
+from core.models import Tenant, Domain
 
 # Crear tenant público (obligatorio para django-tenants)
-public_tenant = Client(schema_name="public", name="Public Schema")
+public_tenant = Tenant(schema_name="public", name="Public Schema")
 public_tenant.save()
 
 exit()
@@ -207,10 +207,10 @@ python manage.py shell
 ```
 
 ```python
-from customers.models import Client, Domain
+from core.models import Tenant, Domain
 
 # Crear el tenant del hotel
-hotel = Client(schema_name="hotel_sol", name="Hotel Sol")
+hotel = Tenant(schema_name="hotel_sol", name="Hotel Sol")
 hotel.save()
 
 # Asociar un dominio al tenant
@@ -339,10 +339,10 @@ python -m pip install "Django==5.2.*" djangorestframework "psycopg[binary]" djan
 
 ```bash
 django-admin startproject config .
-python manage.py startapp customers
+python manage.py startapp core
 ```
 
-Crea los modelos de `Client` y `Domain` dentro de `customers/models.py`, y configura `settings.py` con las variables `SHARED_APPS`, `TENANT_APPS`, `DATABASE_ROUTERS`, `MIDDLEWARE`, etc.
+Crea los modelos de `Tenant` y `Domain` dentro de `core/models.py`, y configura `settings.py` con las variables `SHARED_APPS`, `TENANT_APPS`, `DATABASE_ROUTERS`, `MIDDLEWARE`, etc.
 
 ---
 
@@ -388,9 +388,9 @@ python manage.py shell
 ```
 
 ```python
-from customers.models import Client, Domain
-pub = Client(schema_name="public", name="Main"); pub.save()
-c = Client(schema_name="hotel_sol", name="Hotel Sol"); c.save()
+from core.models import Tenant, Domain
+pub = Tenant(schema_name="public", name="Main"); pub.save()
+c = Tenant(schema_name="hotel_sol", name="Hotel Sol"); c.save()
 d = Domain(domain="hotelsol.localhost", tenant=c, is_primary=True); d.save()
 ```
 
@@ -483,7 +483,7 @@ Esto permitirá acceder mediante el subdominio `http://hotelsol.localhost:8000/`
 
 ## ✅ Resultado final
 
-- Esquema `public`: tablas globales y registro de tenants (`customers_client`, `customers_domain`)
+- Esquema `public`: tablas globales y registro de tenants (`core_tenant`, `core_domain`)
 - Esquema `hotel_sol`: tablas propias del tenant (`usuarios_user`, `auth_*`, `admin_*`, etc.)
 - Aislamiento completo por subdominio (`hotelsol.localhost`)
 
@@ -505,7 +505,7 @@ CadenaHoteleraBack/
 │   ├── urls.py           # URLs principales
 │   ├── urls_public.py    # URLs del esquema público
 │   └── urls_tenant.py    # URLs de los tenants
-├── customers/             # Modelos de tenants
+├── core/             # Modelos de tenants
 ├── .env                   # Variables de entorno (NO en Git)
 ├── .gitignore            # Archivos ignorados por Git
 ├── db.sqlite3            # Base de datos SQLite (NO en Git)

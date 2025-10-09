@@ -9,29 +9,30 @@ SECRET_KEY = env.str("SECRET_KEY", default="secretos") #type:ignore
 
 DEBUG = env.bool("DEBUG", default=True) #type:ignore
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"]) #type:ignore
 DATABASES = {
     "default": {
         "ENGINE": "django_tenants.postgresql_backend",
         "NAME": env("PGDATABASE", default="hotel_cad_bd"),#type:ignore
         "USER": env("PGUSER", default="postgres"),#type:ignore
-        "PASSWORD": env("PGPASSWORD", default="1234"),#type:ignore
+        "PASSWORD": env("PGPASSWORD", default="admin"),#type:ignore
         "HOST": env("PGHOST", default="127.0.0.1"),#type:ignore
-        "PORT": env("PGPORT", default="5432"),#type:ignore
+        "PORT": env("PGPORT", default="5433"),#type:ignore
     }
 }
 
 # Application definition
 SHARED_APPS = [
     'django_tenants',
-    'customers',
+    'core',
     'django.contrib.contenttypes',
     #'django.contrib.auth',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     #'django.contrib.admin',
+    'rest_framework',
+    
 ]
 TENANT_APPS = [
     'django.contrib.contenttypes',
@@ -39,18 +40,29 @@ TENANT_APPS = [
     'rest_framework',
     'apps.usuarios',  # your tenant-specific apps
     'django.contrib.admin',
+    'apps.hoteles',
+    'apps.habitaciones',
 ]
 
 
 INSTALLED_APPS = list(dict.fromkeys(SHARED_APPS + TENANT_APPS))
-TENANT_MODEL = "customers.Client"
-TENANT_DOMAIN_MODEL = "customers.Domain"
+TENANT_MODEL = "core.Tenant"
+TENANT_DOMAIN_MODEL = "core.Domain"
 
 DATABASE_ROUTERS = ("django_tenants.routers.TenantSyncRouter",)
 
+# Email settings                           django.core.mail.backends.console.EmailBackend
+EMAIL_BACKEND = env.str('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')#type:ignore
+EMAIL_HOST = env.str('EMAIL_HOST', default='smtp.gmail.com')#type:ignore
+EMAIL_PORT = env.int('EMAIL_PORT', default=587)#type:ignore
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)#type:ignore
+EMAIL_HOST_USER = env.str('EMAIL_HOST_USER', default='brayan.123.bg76@gmail.com')#type:ignore
+EMAIL_HOST_PASSWORD = env.str('EMAIL_HOST_PASSWORD', default='')#type:ignore
+DEFAULT_FROM_EMAIL = env.str('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)#type:ignore
 
 MIDDLEWARE = [
     "django_tenants.middleware.TenantMainMiddleware",
+    'config.middleware.middleware_force_urlconf.ForcetenantUrlconfMiddleware', 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -63,6 +75,7 @@ MIDDLEWARE = [
 ROOT_URLCONF = "config.urls_public"
 PUBLIC_SCHEMA_URLCONF = "config.urls_public"
 TENANT_URLCONF = "config.urls_tenant"
+TENANT_BASE_DOMAIN = env.str("TENANT_BASE_DOMAIN", default="localhost") #type:ignore
 
 AUTH_USER_MODEL = "usuarios.User"
 
