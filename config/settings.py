@@ -32,6 +32,7 @@ SHARED_APPS = [
     'django.contrib.staticfiles',
     #'django.contrib.admin',
     'rest_framework',
+    'corsheaders'
     
 ]
 TENANT_APPS = [
@@ -61,6 +62,7 @@ EMAIL_HOST_PASSWORD = env.str('EMAIL_HOST_PASSWORD', default='')#type:ignore
 DEFAULT_FROM_EMAIL = env.str('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)#type:ignore
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware", 
     "django_tenants.middleware.TenantMainMiddleware",
     'config.middleware.middleware_force_urlconf.ForcetenantUrlconfMiddleware', 
     'django.middleware.security.SecurityMiddleware',
@@ -78,6 +80,10 @@ TENANT_URLCONF = "config.urls_tenant"
 TENANT_BASE_DOMAIN = env.str("TENANT_BASE_DOMAIN", default="localhost") #type:ignore
 
 AUTH_USER_MODEL = "usuarios.User"
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
 
 
 TEMPLATES = [
