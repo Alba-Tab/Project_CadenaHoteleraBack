@@ -55,31 +55,31 @@ class Reserva(models.Model):
         blank=False
     )
 
-class ServicioReserva(models.Model):
-    cantidad = models.PositiveIntegerField(default=1)
-    fecha_comsumo = models.DateField(auto_now_add=True)
-    precio_unitario = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        null=False,
-        blank=False
-    )
-    monto_total = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        null=False,
-        blank=False
-    )
-    reserva = models.ForeignKey(
-        Reserva,
-        on_delete=models.CASCADE,
-        related_name='servicios'
-    )
-    servicio = models.ForeignKey(
-        'servicios.Servicio',
-        on_delete=models.CASCADE,
-        related_name='reservas'
-    )
+# class ServicioReserva(models.Model):
+#     cantidad = models.PositiveIntegerField(default=1)
+#     fecha_comsumo = models.DateField(auto_now_add=True)
+#     precio_unitario = models.DecimalField(
+#         max_digits=10,
+#         decimal_places=2,
+#         null=False,
+#         blank=False
+#     )
+#     monto_total = models.DecimalField(
+#         max_digits=10,
+#         decimal_places=2,
+#         null=False,
+#         blank=False
+#     )
+#     reserva = models.ForeignKey(
+#         Reserva,
+#         on_delete=models.CASCADE,
+#         related_name='servicios'
+#     )
+#     servicio = models.ForeignKey(
+#         'servicios.Servicio',
+#         on_delete=models.CASCADE,
+#         related_name='reservas'
+#     )
 
     # class Meta:
     #     unique_together = ('reserva', 'servicio')
