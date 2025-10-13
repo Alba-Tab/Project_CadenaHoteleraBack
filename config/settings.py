@@ -32,13 +32,15 @@ SHARED_APPS = [
     'django.contrib.staticfiles',
     #'django.contrib.admin',
     'rest_framework',
+    'rest_framework_simplejwt',  # ✨ NUEVO
     'corsheaders'
-    
+
 ]
 TENANT_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.auth',
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',  # ✨ NUEVO (para logout seguro)
     'apps.usuarios',  # your tenant-specific apps
     'django.contrib.admin',
     'apps.hoteles',
@@ -62,9 +64,9 @@ EMAIL_HOST_PASSWORD = env.str('EMAIL_HOST_PASSWORD', default='')#type:ignore
 DEFAULT_FROM_EMAIL = env.str('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)#type:ignore
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware", 
+    "corsheaders.middleware.CorsMiddleware",
     "django_tenants.middleware.TenantMainMiddleware",
-    'config.middleware.middleware_force_urlconf.ForcetenantUrlconfMiddleware', 
+    'config.middleware.middleware_force_urlconf.ForcetenantUrlconfMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -83,6 +85,31 @@ AUTH_USER_MODEL = "usuarios.User"
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+
+# ✨ CONFIGURACIÓN DE JWT
+from datetime import timedelta
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+}
 
 
 
