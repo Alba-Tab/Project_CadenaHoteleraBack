@@ -8,6 +8,7 @@ urlpatterns = [
     path('api/', include("apps.usuarios.urls")),
     # path('api/hoteles/', include('apps.hoteles.urls')),
     path('api/habitaciones/', include('apps.habitaciones.urls')),
+    path('api/fidelizacion/', include('apps.fidelizacion.urls')),
     #
     path('admin/', admin.site.urls),
 ]
