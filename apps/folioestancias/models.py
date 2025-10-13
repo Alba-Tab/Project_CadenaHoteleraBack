@@ -16,13 +16,13 @@ class FolioEstancia(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name="folios_estancia",
-        null=False,
+        nullable=False,
         blank=False,
     )
     reserva = models.ForeignKey(
         Reserva,
         on_delete=models.CASCADE,
         related_name="folios_estancia",
-        null=False,
+        nullable=False,
         blank=False,
     )
