@@ -42,6 +42,7 @@ TENANT_APPS = [
     'django.contrib.admin',
     'apps.hoteles',
     'apps.habitaciones',
+    'apps.servicios',
 ]
 
 
