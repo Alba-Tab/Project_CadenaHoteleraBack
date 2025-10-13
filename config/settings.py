@@ -26,15 +26,14 @@ SHARED_APPS = [
     'django_tenants',
     'core',
     'django.contrib.contenttypes',
-    #'django.contrib.auth',
+    # 'django.contrib.auth',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    #'django.contrib.admin',
+    # 'django.contrib.admin',
     'rest_framework',
     'rest_framework_simplejwt',  # ✨ NUEVO
-    'corsheaders'
-
+    'corsheaders',
 ]
 TENANT_APPS = [
     'django.contrib.contenttypes',
@@ -45,6 +44,9 @@ TENANT_APPS = [
     'django.contrib.admin',
     'apps.hoteles',
     'apps.habitaciones',
+    'apps.servicios',
+    'apps.reservas',
+    'apps.folioestancias',
     'apps.fidelizacion',
 ]
 
