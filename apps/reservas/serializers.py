@@ -1,24 +1,7 @@
 from rest_framework import serializers
 
 from apps.habitaciones.models import Habitacion
-from apps.habitaciones.serializers import HabitacionSimpleSerializer
-from apps.reservas.models import Reserva, ServicioReserva
-
-
-class ServicioSerializer(serializers.ModelSerializer):
-    servicio = serializers.PrimaryKeyRelatedField(queryset='servicios.Servicio'.objects.all())
-
-    class Meta:
-        model = ServicioReserva
-        fields = ['servicio', 'cantidad',]
-
-# class DetalleServicioExtraSerializer(serializers.ModelSerializer):
-#     habitacion = serializers.PrimaryKeyRelatedField(queryset=Habitacion.objects.all())
-#     servicios = ServicioExtraSerializer(many=True, required=False)
-#
-#     class Meta:
-#         model = DetalleReserva
-#         fields = ['habitacion', 'servicios',]
+from apps.reservas.models import Reserva
 
 class ReservaSerializer(serializers.ModelSerializer):
     nombre_huesped = serializers.CharField(
@@ -36,25 +19,6 @@ class ReservaSerializer(serializers.ModelSerializer):
         source='habitacion.numero',
         read_only=True
     )
-    # Para recibir una lista de objetos de servicios
-    servicios = ServicioSerializer(many=True, required=False, write_only=True)
-    # Para recibir una lista de IDs de servicios
-    # servicios = serializers.ListSerializer(
-    #     child=serializers.PrimaryKeyRelatedField(
-    #         queryset='servicios.Servicio'.objects.all()
-    #     ),
-    #     required=False,    #Permite que el campo no sea obligatorio
-    #     write_only=True     #solo sea recibido en la solicitud
-    # )
-    # Para recibir una lista de IDs de habitaciones
-    # habitaciones = serializers.ListSerializer(
-    #     child=serializers.PrimaryKeyRelatedField(
-    #         queryset=Habitacion.objects.all()
-    #     ),
-    #     #required=False,    #Permite que el campo no sea obligatorio
-    #     write_only=True     #solo sea recibido en la solicitud
-    # )
-    # habitaciones = DetalleServicioExtraSerializer(many=True, write_only=True)
 
     class Meta:
         model = Reserva
@@ -71,30 +35,4 @@ class ReservaSerializer(serializers.ModelSerializer):
             'nombre_hotel',
             'habitacion',
             'nro_habitacion',
-            # 'servicios',
-        ]
-
-class DetalleReservaSerializer(serializers.ModelSerializer):
-    nombre_huesped = serializers.CharField(
-        source='huesped.nombre',
-        read_only=True
-    )
-    habitaciones = HabitacionSimpleSerializer(
-        many=True,
-        source='habitaciones_reservadas.habitacion',
-        read_only=True
-    )
-
-    class Meta:
-        model = Reserva
-        fields = [
-            'id',
-            'fecha_reserva',
-            'fecha_entrada',
-            'fecha_salida',
-            'total',
-            'estado',
-            'huesped',
-            'nombre_huesped',
-            'habitaciones',
         ]

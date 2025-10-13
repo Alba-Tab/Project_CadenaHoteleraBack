@@ -5,7 +5,7 @@ from rest_framework.response import Response
 
 from apps.habitaciones.models import Habitacion
 from apps.reservas.models import Reserva
-from apps.reservas.serializers import ReservaSerializer, DetalleReservaSerializer
+from apps.reservas.serializers import ReservaSerializer
 from apps.reservas.services import procesar_reserva, actualizar_reserva
 
 
@@ -33,15 +33,3 @@ class ReservaViewSet(viewsets.ModelViewSet):
         habitacion.estado = Habitacion.DISPONIBLE
         habitacion.save()
         instance.delete()
-
-    @action(
-        detail=True,
-        methods=['get'],
-        url_path='detalle',
-        serializer_class=DetalleReservaSerializer,
-        pagination_class=None
-    )
-    def detalle(self, request, pk=None):
-        reserva = self.get_object()
-        serializer = DetalleReservaSerializer(reserva)
-        return Response(serializer.data)
