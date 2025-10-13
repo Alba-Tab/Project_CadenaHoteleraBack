@@ -45,6 +45,7 @@ TENANT_APPS = [
     'django.contrib.admin',
     'apps.hoteles',
     'apps.habitaciones',
+    'apps.servicioreserva'
 ]
 
 
@@ -91,10 +92,10 @@ from datetime import timedelta
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        # 'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        # 'rest_framework.permissions.IsAuthenticated',
     ],
 }
 

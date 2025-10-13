@@ -6,9 +6,9 @@ from django.db import models
 
 class ServicioReserva(models.Model):
 
-    servicio = models.ForeignKey(Servicio, on_delete=models.CASCADE, related_name='servicios')
-    reserva = models.ForeignKey(Reserva, on_delete=models.CASCADE, related_name='reservas')
-    folioestancia = models.ForeignKey(FolioEstancia, on_delete=models.CASCADE, related_name='folioestancias')
+    # servicio = models.ForeignKey(Servicio, on_delete=models.CASCADE, related_name='servicios')
+    # reserva = models.ForeignKey(Reserva, on_delete=models.CASCADE, related_name='reservas')
+    # folioestancia = models.ForeignKey(FolioEstancia, on_delete=models.CASCADE, related_name='folioestancias')
 
     cantidad = models.PositiveIntegerField()
     fecha_consumo = models.DateField()
@@ -18,11 +18,11 @@ class ServicioReserva(models.Model):
     class Meta:
         verbose_name = "ServicioReserva"
         verbose_name_plural = "ServicioReservas"
-        unique_together = ['reserva', 'servicio']
-        ordering = ['-fecha_creacion']
+        # unique_together = ['reserva', 'servicio']
+        # ordering = ['-fecha_creacion']
         
-    def __str__(self):
-        return f'{self.servicio.nombre} - Reserva #{self.reserva.id}'
+    # def __str__(self):
+        # return f'{self.servicio.nombre} - Reserva #{self.reserva.id}'
     
     def save(self, *args, **kwargs):
         # Calcular precio total automáticamente
