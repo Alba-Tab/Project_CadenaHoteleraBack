@@ -2,30 +2,107 @@
 
 ## Esta guía detalla los **pasos seguidos para crear la aplicación multi‑tenant** con `django-tenants`, usando un esquema por tenant y usuarios independientes por hotel
 
-## 🤝 Flujo de trabajo con Git
+# 🤝 Flujo de trabajo con Git (Equipos y Ramas)
 
-### Antes de empezar a trabajar':'
+Esta guía explica cómo debe trabajar un equipo de desarrollo utilizando
+ramas en Git para mantener un flujo limpio y organizado.
+
+## 1️⃣ Estructura recomendada de ramas
+
+-**main** → rama principal, contiene solo código estable y probado.\
+ -**develop** → rama de integración donde se unen las nuevas funciones
+antes de pasar a producción.\
+ -**feature/**nombre-funcionalidad → ramas de trabajo individuales
+para nuevas funciones o tareas.\
+ -**hotfix/**nombre-fix → correcciones urgentes directamente sobre
+main.
+
+---
+
+## 2️⃣ Clonar el repositorio por primera vez
 
 ```bash
-git pull origin main  # Actualiza tu código local
+git clone https://github.com/Alba-Tab/Project_CadenaHoteleraBack
+cd Project_CadenaHoteleraBack
+git checkout develop
 ```
 
-### Después de hacer cambios':'
+---
+
+## 3️⃣ Crear una nueva rama para trabajar
+
+Antes de crear una nueva rama, asegúrate de tener el código actualizado:
+
+```bash
+git pull origin develop
+git checkout -b feature/nueva-funcionalidad
+```
+
+---
+
+## 4️⃣ Guardar y subir tus cambios
 
 ```bash
 git add .
 git commit -m "Descripción clara de los cambios"
-git push origin main
+git push origin feature/nueva-funcionalidad
 ```
 
-### Si modificaste modelos':'
+---
+
+## 5️⃣ Solicitar merge (pull request)
+
+Una vez terminada la tarea:
+
+1. Sube tu rama al repositorio remoto.\
+2. En GitHub, crea un _Pull Request_ hacia `develop`.\
+3. Espera revisión del equipo antes de hacer merge.
+
+---
+
+## 6️⃣ Actualizar tu entorno
+
+Cada vez que empieces a trabajar o antes de crear una rama nueva:
+
+```bash
+git checkout develop
+git pull origin develop
+```
+
+Si necesitas el último código estable:
+
+```bash
+git checkout main
+git pull origin main
+```
+
+---
+
+## 7️⃣ Trabajar con migraciones (Django)
+
+Si modificas modelos, genera y versiona las migraciones:
 
 ```bash
 python manage.py makemigrations
-git add apps/*/migrations/*.py  # Versionar las migraciones
+git add apps/*core*.py
 git commit -m "Agregadas migraciones para [descripción]"
 git push
 ```
+
+---
+
+## ✅ Buenas prácticas
+
+-No trabajar directamente sobre `main`.\
+ -Hacer commits pequeños y claros.\
+ -Usar nombres de rama descriptivos.\
+ -Borrar ramas locales y remotas cuando ya se fusionen.\
+ -Hacer `pull` antes de empezar cada jornada.
+
+---
+
+**¡Listo! Tu flujo de trabajo en equipo con Git está configurado y
+organizado.**
 
 ---
 
@@ -112,10 +189,10 @@ python manage.py shell
 Dentro de la shell de Python:
 
 ```python
-from customers.models import Client, Domain
+from core.models import Tenant, Domain
 
 # Crear tenant público (obligatorio para django-tenants)
-public_tenant = Client(schema_name="public", name="Public Schema")
+public_tenant = Tenant(schema_name="public", name="Public Schema")
 public_tenant.save()
 
 exit()
@@ -130,10 +207,10 @@ python manage.py shell
 ```
 
 ```python
-from customers.models import Client, Domain
+from core.models import Tenant, Domain
 
 # Crear el tenant del hotel
-hotel = Client(schema_name="hotel_sol", name="Hotel Sol")
+hotel = Tenant(schema_name="hotel_sol", name="Hotel Sol")
 hotel.save()
 
 # Asociar un dominio al tenant
@@ -262,10 +339,10 @@ python -m pip install "Django==5.2.*" djangorestframework "psycopg[binary]" djan
 
 ```bash
 django-admin startproject config .
-python manage.py startapp customers
+python manage.py startapp core
 ```
 
-Crea los modelos de `Client` y `Domain` dentro de `customers/models.py`, y configura `settings.py` con las variables `SHARED_APPS`, `TENANT_APPS`, `DATABASE_ROUTERS`, `MIDDLEWARE`, etc.
+Crea los modelos de `Tenant` y `Domain` dentro de `core/models.py`, y configura `settings.py` con las variables `SHARED_APPS`, `TENANT_APPS`, `DATABASE_ROUTERS`, `MIDDLEWARE`, etc.
 
 ---
 
@@ -311,9 +388,9 @@ python manage.py shell
 ```
 
 ```python
-from customers.models import Client, Domain
-pub = Client(schema_name="public", name="Main"); pub.save()
-c = Client(schema_name="hotel_sol", name="Hotel Sol"); c.save()
+from core.models import Tenant, Domain
+pub = Tenant(schema_name="public", name="Main"); pub.save()
+c = Tenant(schema_name="hotel_sol", name="Hotel Sol"); c.save()
 d = Domain(domain="hotelsol.localhost", tenant=c, is_primary=True); d.save()
 ```
 
@@ -406,7 +483,7 @@ Esto permitirá acceder mediante el subdominio `http://hotelsol.localhost:8000/`
 
 ## ✅ Resultado final
 
-- Esquema `public`: tablas globales y registro de tenants (`customers_client`, `customers_domain`)
+- Esquema `public`: tablas globales y registro de tenants (`core_tenant`, `core_domain`)
 - Esquema `hotel_sol`: tablas propias del tenant (`usuarios_user`, `auth_*`, `admin_*`, etc.)
 - Aislamiento completo por subdominio (`hotelsol.localhost`)
 
@@ -428,7 +505,7 @@ CadenaHoteleraBack/
 │   ├── urls.py           # URLs principales
 │   ├── urls_public.py    # URLs del esquema público
 │   └── urls_tenant.py    # URLs de los tenants
-├── customers/             # Modelos de tenants
+├── core/             # Modelos de tenants
 ├── .env                   # Variables de entorno (NO en Git)
 ├── .gitignore            # Archivos ignorados por Git
 ├── db.sqlite3            # Base de datos SQLite (NO en Git)
