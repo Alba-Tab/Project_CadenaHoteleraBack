@@ -2,15 +2,15 @@ from rest_framework import serializers
 
 from apps.habitaciones.models import Habitacion
 from apps.habitaciones.serializers import HabitacionSimpleSerializer
-from apps.reservas.models import Reserva
+from apps.reservas.models import Reserva, ServicioReserva
 
 
-# class ServicioExtraSerializer(serializers.ModelSerializer):
-#     servicio = serializers.PrimaryKeyRelatedField(queryset='servicios.Servicio'.objects.all())
-#
-#     class Meta:
-#         model = ServicioExtra
-#         fields = ['servicio', 'cantidad',]
+class ServicioSerializer(serializers.ModelSerializer):
+    servicio = serializers.PrimaryKeyRelatedField(queryset='servicios.Servicio'.objects.all())
+
+    class Meta:
+        model = ServicioReserva
+        fields = ['servicio', 'cantidad',]
 
 # class DetalleServicioExtraSerializer(serializers.ModelSerializer):
 #     habitacion = serializers.PrimaryKeyRelatedField(queryset=Habitacion.objects.all())
@@ -36,6 +36,9 @@ class ReservaSerializer(serializers.ModelSerializer):
         source='habitacion.numero',
         read_only=True
     )
+    # Para recibir una lista de objetos de servicios
+    servicios = ServicioSerializer(many=True, required=False, write_only=True)
+    # Para recibir una lista de IDs de servicios
     # servicios = serializers.ListSerializer(
     #     child=serializers.PrimaryKeyRelatedField(
     #         queryset='servicios.Servicio'.objects.all()

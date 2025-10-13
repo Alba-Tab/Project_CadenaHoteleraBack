@@ -4,7 +4,7 @@ from rest_framework import serializers
 from core.models import Tenant, Domain
 import re
 
-DEFAULT_BASE_DOMAIN = getattr(settings, "TENANT_BASE_DOMAIN", "hotelapp.localhost")
+DEFAULT_BASE_DOMAIN = getattr(settings, "TENANT_BASE_DOMAIN", "localhost")
 class TenantModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tenant
@@ -21,7 +21,7 @@ class TenantModelSerializer(serializers.ModelSerializer):
         full_domain = f"{sub}.{DEFAULT_BASE_DOMAIN}"
 
         if Domain.objects.filter(domain=full_domain).exists():
-            raise serializers.ValidationError({"subdominio": "El dominio ya existe. Elige otro subdominio."})     
+            raise serializers.ValidationError({"subdominio": "El dominio ya existe. Elige otro subdominio."})
         if ":" in full_domain or full_domain.startswith("www."):
             raise serializers.ValidationError({"subdominio": "No incluir puerto ni 'www' en el dominio."})
 
@@ -52,7 +52,7 @@ class TenantFormSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, attrs):
-        # Normalizar subdominio 
+        # Normalizar subdominio
         base = attrs.get("subdominio") or attrs["nombre_empresa"]
         candidate = slugify(base, allow_unicode=False)
         sub = re.sub(r'[^a-z]', '', candidate.lower())[:63]
@@ -64,7 +64,7 @@ class TenantFormSerializer(serializers.ModelSerializer):
         full_domain = f"{sub}.{DEFAULT_BASE_DOMAIN}"
 
         if Domain.objects.filter(domain=full_domain).exists():
-            raise serializers.ValidationError({"subdominio": "El dominio ya existe. Elige otro subdominio."})     
+            raise serializers.ValidationError({"subdominio": "El dominio ya existe. Elige otro subdominio."})
         if ":" in full_domain or full_domain.startswith("www."):
             raise serializers.ValidationError({"subdominio": "No incluir puerto ni 'www' en el dominio."})
 
