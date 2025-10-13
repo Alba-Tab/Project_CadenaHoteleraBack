@@ -9,6 +9,7 @@ urlpatterns = [
     # path('api/hoteles/', include('apps.hoteles.urls')),
     path('api/habitaciones/', include('apps.habitaciones.urls')),
     path('api/reservas/', include('apps.reservas.urls')),
+    path('api/servicioreservas/', include('apps.servicioreserva.urls')),
     #
     path('admin/', admin.site.urls),
 ]
