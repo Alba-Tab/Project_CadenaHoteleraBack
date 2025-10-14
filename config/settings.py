@@ -26,14 +26,22 @@ SHARED_APPS = [
     'django_tenants',
     'core',
     'django.contrib.contenttypes',
-    # 'django.contrib.auth',
+    'django.contrib.auth',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # 'django.contrib.admin',
+    'django.contrib.admin',
     'rest_framework',
     'rest_framework_simplejwt',  # ✨ NUEVO
     'corsheaders',
+    'drf_spectacular',
+    'apps.usuarios',
+    'apps.hoteles',
+    'apps.habitaciones',
+    'apps.servicios',
+    'apps.reservas',
+    'apps.servicioreserva',
+    'apps.folioestancias',
 ]
 TENANT_APPS = [
     'django.contrib.contenttypes',
@@ -98,6 +106,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 SIMPLE_JWT = {
