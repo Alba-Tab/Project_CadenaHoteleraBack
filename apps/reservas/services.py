@@ -1,6 +1,7 @@
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
+from apps.folioestancias.models import FolioEstancia
 from apps.habitaciones.models import Habitacion
 from apps.reservas.models import Reserva
 
@@ -12,7 +13,6 @@ def procesar_reserva(data):
     habitacion = data.get('habitacion')
     fecha_entrada = data.get('fecha_entrada')
     fecha_salida = data.get('fecha_salida')
-    servicios = data.get('servicios', [])
 
     # Verificamos que las fechas sean válidas
     verificar_fechas(fecha_entrada, fecha_salida)
@@ -34,8 +34,6 @@ def procesar_reserva(data):
     habitacion.estado = Habitacion.RESERVADA
     habitacion.save()
 
-    # Asociamos los servicios a la reserva
-
     return reserva
 
 
@@ -44,7 +42,7 @@ def procesar_reserva(data):
 def actualizar_reserva(reserva, data):
     # Obtenemos las habitaciones y fechas del diccionario data
     # Si no se proporcionan, se mantienen las actuales
-    habitacion = data.get('habitaciones', reserva.habitacion)
+    habitacion = data.get('habitaciones')
     fecha_entrada = data.get('fecha_entrada', reserva.fecha_entrada)
     fecha_salida = data.get('fecha_salida', reserva.fecha_salida)
 
@@ -54,6 +52,13 @@ def actualizar_reserva(reserva, data):
     total_noches = (fecha_salida - fecha_entrada).days
     # Calculamos el total de la reserva
     total = habitacion.precio_noche * total_noches
+
+    if habitacion:
+        # Cambiamos el estado de las habitaciones si es necesario
+        cambiar_estados(habitacion, reserva.habitacion)
+    else:
+        # Si no se proporciona una nueva habitación, mantenemos la actual
+        habitacion = reserva.habitacion
 
     # Actualizamos los campos de la reserva
     reserva.fecha_entrada = fecha_entrada
@@ -71,3 +76,12 @@ def actualizar_reserva(reserva, data):
 def verificar_fechas(fecha_entrada, fecha_salida):
     if fecha_salida <= fecha_entrada:
         raise ValidationError("La fecha de salida debe ser mayor a la fecha de entrada.")
+
+def cambiar_estados(nueva_habitacion, habitacion_actual):
+    if nueva_habitacion != habitacion_actual:
+        # Liberamos la habitación actual
+        habitacion_actual.estado = Habitacion.DISPONIBLE
+        habitacion_actual.save()
+        # Reservamos la nueva habitación
+        nueva_habitacion.estado = Habitacion.RESERVADA
+        nueva_habitacion.save()
