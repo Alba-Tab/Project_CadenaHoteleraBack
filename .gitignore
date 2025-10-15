@@ -29,8 +29,8 @@ db.sqlite3-journal
 # Django migrations (opcional, algunos prefieren versionarlas)
 # Si trabajas en equipo, es mejor NO ignorar las migraciones
 # Descomenta las siguientes líneas solo si prefieres no versionarlas:
-# *core*.py
-# !*core__init__.py
+# */migrations/*.py
+# !*/migrations/__init__.py
 
 # Django static files
 staticfiles/

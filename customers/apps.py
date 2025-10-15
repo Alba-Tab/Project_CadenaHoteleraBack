@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class FolioestanciasConfig(AppConfig):
+class CustomersConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'apps.folioestancias'
+    name = 'customers'

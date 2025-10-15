@@ -1,19 +1,10 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from apps.usuarios.views import UserViewSet
 
-from django.contrib import admin
+router = DefaultRouter()
+router.register("usuarios", UserViewSet, basename="usuario")
 
 urlpatterns = [
-    path('api/', include('apps.hoteles.urls')),
-    path('api/', include("apps.usuarios.urls")),
-    # path('api/hoteles/', include('apps.hoteles.urls')),
-    path('api/habitaciones/', include('apps.habitaciones.urls')),
-    path("api/", include("apps.servicios.urls")),
-    path('api/reservas/', include('apps.reservas.urls')),
-    path('api/servicioreservas/', include('apps.servicioreserva.urls')),
-    path('api/folioestancias/', include('apps.folioestancias.urls')),
-    path('api/fidelizacion/', include('apps.fidelizacion.urls')),
-    #
-    path('admin/', admin.site.urls),
+    path("api/", include(router.urls)),
 ]
-
