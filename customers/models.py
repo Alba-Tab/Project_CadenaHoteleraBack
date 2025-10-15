@@ -1,7 +1,7 @@
 from django.db import models
 from django_tenants.models import TenantMixin, DomainMixin
 
-class Tenant(TenantMixin):
+class Client(TenantMixin):
     name = models.CharField(max_length=100)
     paid_until = models.DateField(null=True, blank=True)
     on_trial = models.BooleanField(default=True)
@@ -9,4 +9,3 @@ class Tenant(TenantMixin):
 
 class Domain(DomainMixin):
     pass
-
