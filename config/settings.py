@@ -48,8 +48,13 @@ TENANT_APPS = [
     'apps.reservas',
     'apps.folioestancias',
     'apps.fidelizacion',
+<<<<<<< HEAD
     
     'apps.pagos',
+=======
+    'apps.servicioreserva',
+    'apps.checkinout',
+>>>>>>> cfe7cb63a48eb316a68bda494d9c30e80caaec95
 ]
 
 
