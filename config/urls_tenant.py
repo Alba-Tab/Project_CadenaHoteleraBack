@@ -13,6 +13,7 @@ urlpatterns = [
     path('api/servicioreservas/', include('apps.servicioreserva.urls')),
     path('api/folioestancias/', include('apps.folioestancias.urls')),
     path('api/fidelizacion/', include('apps.fidelizacion.urls')),
+    path("api/", include("apps.pagos.urls")),
     #
     path('admin/', admin.site.urls),
 ]

@@ -1,14 +1,13 @@
 from django.db import models
-# from apps.servicios.models import Servicio
-# from apps.reservas.models import Reserva
-# from apps.folioestancia.models import Folioestancia
+from apps.servicios.models import Servicio
+from apps.reservas.models import Reserva
 
 
 class ServicioReserva(models.Model):
 
     servicio = models.ForeignKey(Servicio, on_delete=models.CASCADE, related_name='servicios')
     reserva = models.ForeignKey(Reserva, on_delete=models.CASCADE, related_name='reservas')
-    folioestancia = models.ForeignKey(FolioEstancia, on_delete=models.CASCADE, related_name='folioestancias')
+    folioestancia = models.ForeignKey('folioestancias.FolioEstancia', on_delete=models.CASCADE, related_name='folioestancias')
 
     cantidad = models.PositiveIntegerField()
     fecha_consumo = models.DateField()
