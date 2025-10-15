@@ -1,7 +1,7 @@
 from django.db import models
-# from apps.servicios.models import Servicio
-# from apps.reservas.models import Reserva
-# from apps.folioestancia.models import Folioestancia
+from apps.servicios.models import Servicio
+from apps.reservas.models import Reserva
+from apps.folioestancias.models import FolioEstancia
 
 
 class ServicioReserva(models.Model):
@@ -19,7 +19,7 @@ class ServicioReserva(models.Model):
         verbose_name = "ServicioReserva"
         verbose_name_plural = "ServicioReservas"
         unique_together = ['reserva', 'servicio']
-        ordering = ['-fecha_creacion']
+        ordering = ['-fecha_consumo']
         
     def __str__(self):
         return f'{self.servicio.nombre} - Reserva #{self.reserva.id}'
