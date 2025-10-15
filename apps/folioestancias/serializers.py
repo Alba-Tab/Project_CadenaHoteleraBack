@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.folioestancias.models import FolioEstancia
-from apps.servicioreserva.serializers import ServicioReservaSerializer
+from apps.servicios.serializers import ServicioReservaSerializer
 
 
 class FolioEstanciaSerializer(serializers.ModelSerializer):
