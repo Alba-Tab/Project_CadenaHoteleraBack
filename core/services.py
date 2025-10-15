@@ -25,15 +25,15 @@ class TenantFormService:
         if Domain.objects.filter(domain=full_domain).exists():
             raise ValueError("Dominio ya existente.")
 
-        tenant = Tenant(schema_name=schema_name, name=nombre_empresa) 
+        tenant = Tenant(schema_name=schema_name, name=nombre_empresa)
         tenant.save()
-
+        print("TENANT CREADO")
         Domain.objects.create(domain=full_domain, tenant=tenant, is_primary=True)
-
+        print("DOMINIO CREADO")
         # Crear datos del usuario
         User = get_user_model()
         with schema_context(tenant.schema_name):
-            
+
             User.objects.create_user(
                 username=username,
                 email=email,
@@ -48,25 +48,27 @@ class TenantFormService:
         Hola {username},
 
         Se ha creado tu tenant {tenant.name}.
-        Accede en: https://{full_domain}
+        Accede en: http://{full_domain}
         tus credenciales son las siguientes:
         Usuario: {username}
         Contraseña: {password}
         Por favor, cambia tu contraseña después del primer inicio de sesión.
-        
+
         Saludos,
         Equipo de soporte
         """
+        print("ENVIANDO EMAIL")
         send_mail(subject, message, DEFAULT_FROM_EMAIL, [email]) #type:ignore
+        print("EMAIL ENVIADO")
+
         return {
             "tenant_id": tenant.id, #type:ignore
             "schema_name": tenant.schema_name,
             "domain": full_domain,
             "admin_username": username,
             "admin_email": email,
-            
         }
-    
+
     @staticmethod
     @transaction.atomic
     def create_tenant_basic(schema_name: str, name: str, domain: str) -> Dict[str, Any]:
