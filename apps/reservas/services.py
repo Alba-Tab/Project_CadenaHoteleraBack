@@ -34,6 +34,14 @@ def procesar_reserva(data):
     habitacion.estado = Habitacion.RESERVADA
     habitacion.save()
 
+    # Creamos el folio de estancia asociado a la reserva
+    folio = FolioEstancia.objects.create(
+        estado=FolioEstancia.PENDIENTE,
+        total_pagado=0,
+        huesped=data.get('huesped'),
+        reserva=reserva
+    )
+
     return reserva
 
 
