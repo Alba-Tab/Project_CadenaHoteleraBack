@@ -1,5 +1,6 @@
 from django.db import models
-
+from apps.reservas.models import Reserva
+from apps.folioestancias.models import FolioEstancia
 class Servicio(models.Model):
     nombre = models.CharField(max_length=60)
     descripcion = models.TextField(blank=True)
@@ -22,6 +23,8 @@ class ServicioReserva(models.Model):
         on_delete=models.CASCADE,
         related_name="reservas_servicio"
     )
+    reserva = models.ForeignKey(Reserva, on_delete=models.CASCADE, related_name='reservas')
+    folioestancia = models.ForeignKey(FolioEstancia, on_delete=models.CASCADE, related_name='folioestancias')
     cantidad = models.PositiveIntegerField()
     fecha_consumo = models.DateField()
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
