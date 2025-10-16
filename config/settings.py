@@ -45,6 +45,7 @@ TENANT_APPS = [
     'apps.hoteles',
     'apps.habitaciones',
     'apps.servicios',
+    # 'apps.servicioreserva',
     'apps.reservas',
     'apps.folioestancias',
 ]
