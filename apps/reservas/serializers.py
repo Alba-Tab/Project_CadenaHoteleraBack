@@ -5,7 +5,7 @@ from apps.reservas.models import Reserva
 
 class ReservaSerializer(serializers.ModelSerializer):
     nombre_huesped = serializers.CharField(
-        source='huesped.nombre',
+        source='huesped.firstname',
         read_only=True
     )
     nombre_hotel = serializers.CharField(

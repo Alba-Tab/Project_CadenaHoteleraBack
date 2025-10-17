@@ -1,0 +1,88 @@
+ejecurta el archivon para crear el eaquema publico
+python create_public_tenant.py
+
+este crea el tenant tajibo (si ya esta creado el esquema tajibo es necesario borrar el equemo de la base de datos para
+que se pueda volver a crear)
+python create_tenant_tajibo.py
+
+
+como crear un tenant con comando 
+python config/create_tenant_tajibo.py
+
+verificar si el tenant esta resgistrado
+python manage.py shell
+
+
+
+Ejecuta el comando de migración y seed dentro del schema del tenant 
+python manage.py tenant_command seed_servicios --schema=hotel_tajibo
+
+
+aplicamos las migraciones publicas 
+python manage.py migrate_schemas --schema=public
+
+
+
+
+dominio servicios 
+
+http://hoteltajibo.localhost:8000/api/servicios/
+
+prueba en Postman
+JSON
+{
+  "nombre": "Spa Premium",
+  "descripcion": "Acceso a zona de spa y masaje relajante",
+  "precio": "120.00",
+  "tipo": "relajacio"
+}
+
+
+dominio pagos
+
+http://hoteltajibo.localhost:8000/api/pagos/
+
+prueba en Postman (crear pago)
+JSON
+{
+  "estado": "pendiente",
+  "fecha_pago": "2025-10-17",
+  "metodo": "tarjeta de credito",
+  "monto": "250.00",
+  "referencia": "TEST-001",
+  "folio_estancia": 1
+}
+
+crear datos de prueba de pagos
+python manage.py tenant_command seed_pagos --schema=hotel_tajibo
+
+
+
+para subircambios a la rama local y remota 
+
+git branch
+git add .
+git commit -m "nombre del commit"
+git push origin Noel-back-clean 
+
+
+
+al crear una tabla de una base de datos para agregar 
+
+# 1) Crear la app (Django no acepta rutas con "/")
+python manage.py startapp pagos
+
+# 2) Moverla dentro de /apps (en Windows)
+move pagos apps\
+
+# 3) Registrar la app en settings.py (TENANT_APPS)
+# Abre config/settings.py y añade: 'apps.pagos' en TENANT_APPS
+
+# 4) Crear migraciones del modelo
+python manage.py makemigrations pagos
+
+# 5) Aplicar migraciones en tenants (todos)
+python manage.py migrate_schemas --tenant
+
+# (o solo en hotel_tajibo)
+python manage.py migrate_schemas --tenant -s hotel_tajibo
