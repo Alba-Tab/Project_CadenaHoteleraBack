@@ -16,6 +16,7 @@ urlpatterns = [
     path('api/folioestancias/', include('apps.folioestancias.urls')),
     path('api/fidelizacion/', include('apps.fidelizacion.urls')),
     path('api/checkinout/', include('apps.checkinout.urls')),
+    path('api/', include('apps.pagos.urls')),
     #añadi ests 2 para probar login si estorba, solo borrenlas
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
