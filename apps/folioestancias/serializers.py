@@ -5,6 +5,7 @@ from apps.servicios.serializers import ServicioReservaSerializer
 
 
 class FolioEstanciaSerializer(serializers.ModelSerializer):
+    nombre_huesped = serializers.ReadOnlyField(source='huesped.first_name')
     class Meta:
         model = FolioEstancia
         fields = '__all__'
