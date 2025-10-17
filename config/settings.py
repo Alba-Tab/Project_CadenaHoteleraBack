@@ -49,6 +49,7 @@ TENANT_APPS = [
     'apps.folioestancias',
     'apps.fidelizacion',
     'apps.checkinout',
+    'apps.pagos',
 ]
 
 
