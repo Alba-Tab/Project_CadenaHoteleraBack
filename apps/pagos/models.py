@@ -8,12 +8,10 @@ class Pago(models.Model):
     """
     ESTADO_PENDIENTE = "pendiente"
     ESTADO_COMPLETADO = "completado"
-    ESTADO_FALLIDO = "fallido"
     
     ESTADOS = [
         (ESTADO_PENDIENTE, "Pendiente"),
         (ESTADO_COMPLETADO, "Completado"),
-        (ESTADO_FALLIDO, "Fallido"),
     ]
 
     estado = models.CharField(
@@ -74,6 +72,3 @@ class Pago(models.Model):
         """Retorna True si el pago está pendiente."""
         return self.estado == self.ESTADO_PENDIENTE
     
-    def is_fallido(self):
-        """Retorna True si el pago falló."""
-        return self.estado == self.ESTADO_FALLIDO

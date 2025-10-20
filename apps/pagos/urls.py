@@ -1,10 +1,8 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import PagoViewSet
-
-router = DefaultRouter()
-router.register(r'pagos', PagoViewSet, basename='pago')
+from django.urls import path
+from .views import PagoCreateAPIView, PagoListAPIView, PagoDetailAPIView
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('pagos/', PagoCreateAPIView.as_view(), name='pago-create'),
+    path('pagos/list/', PagoListAPIView.as_view(), name='pago-list'),
+    path('pagos/<int:pk>/', PagoDetailAPIView.as_view(), name='pago-detail'),
 ]
