@@ -8,7 +8,7 @@ from apps.folioestancias.models import FolioEstancia
 
 class PagoCreateSerializer(serializers.ModelSerializer):
     folio_id = serializers.PrimaryKeyRelatedField(
-        queryset=FolioEstancia.objects.all(), source="folio_estancia", write_only=True
+        queryset=FolioEstancia.objects.all(), source="folio_estancia"
     )
 
     class Meta:
@@ -25,17 +25,17 @@ class PagoCreateSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["estado", "created_at"]
 
-    def validate(self, attrs):
-        folio: FolioEstancia = attrs["folio_estancia"]
-        total_reserva = folio.reserva.total
-        pendiente = (Decimal(total_reserva) - Decimal(folio.total_pagado)).quantize(Decimal("0.01"))
-        monto = attrs["monto"]
-
-        if pendiente <= 0:
-            raise serializers.ValidationError("El folio ya está totalmente pagado.")
-        if monto != pendiente:
-            raise serializers.ValidationError(f"El pago debe ser por el total pendiente: {pendiente}. No se permiten pagos parciales.")
-        return attrs
+    # def validate(self, attrs):
+    #     folio: FolioEstancia = attrs["folio_estancia"]
+    #     total_reserva = folio.reserva.total
+    #     pendiente = (Decimal(total_reserva) - Decimal(folio.total_pagado)).quantize(Decimal("0.01"))
+    #     monto = attrs["monto"]
+    #
+    #     if pendiente <= 0:
+    #         raise serializers.ValidationError("El folio ya está totalmente pagado.")
+    #     if monto != pendiente:
+    #         raise serializers.ValidationError(f"El pago debe ser por el total pendiente: {pendiente}. No se permiten pagos parciales.")
+    #     return attrs
 
     @transaction.atomic
     def create(self, validated_data):

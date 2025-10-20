@@ -36,4 +36,4 @@ class DetalleFolioSerializer(serializers.ModelSerializer):
             'reserva',
             'servicios_reservas'
         ]
-        depth = 1  # Profundidad de anidamiento para incluir detalles del usuario y la reserva
+        depth = 2  # Profundidad de anidamiento para incluir detalles del usuario y la reserva
