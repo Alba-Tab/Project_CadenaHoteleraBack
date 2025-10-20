@@ -50,8 +50,6 @@ def actualizar_reserva(reserva, data):
     verificar_fechas(fecha_entrada, fecha_salida)
     # Calculamos el total de noches
     total_noches = (fecha_salida - fecha_entrada).days
-    # Calculamos el total de la reserva
-    total = habitacion.precio_noche * total_noches
 
     if habitacion:
         # Cambiamos el estado de las habitaciones si es necesario
@@ -59,6 +57,9 @@ def actualizar_reserva(reserva, data):
     else:
         # Si no se proporciona una nueva habitación, mantenemos la actual
         habitacion = reserva.habitacion
+
+    # Calculamos el total de la reserva
+    total = habitacion.precio_noche * total_noches
 
     # Actualizamos los campos de la reserva
     reserva.fecha_entrada = fecha_entrada
