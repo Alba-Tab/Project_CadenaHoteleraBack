@@ -1,7 +1,9 @@
-from rest_framework.routers import DefaultRouter
-from .views import CheckInOutViewSet
+from django.urls import path
+from .views import CheckInCreateAPIView, CheckoutAPIView, CheckInListAPIView, CheckInDetailAPIView
 
-router = DefaultRouter()
-router.register(r'', CheckInOutViewSet, basename='checkinout')
-
-urlpatterns = router.urls
+urlpatterns = [
+    path('checkin/', CheckInCreateAPIView.as_view(), name='checkin-create'),
+    path('checkout/<int:reserva_id>/', CheckoutAPIView.as_view(), name='checkout'),
+     path('list/', CheckInListAPIView.as_view(), name='checkin-list'),
+    path('<int:pk>/', CheckInDetailAPIView.as_view(), name='checkin-detail'),
+]

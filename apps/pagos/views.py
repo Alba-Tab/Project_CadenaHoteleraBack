@@ -1,40 +1,51 @@
-from rest_framework import viewsets, permissions, filters
-from .models import Pago
-from .serializers import PagoSerializer
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from apps.pagos.models import Pago
+from rest_framework.generics import ListAPIView, RetrieveAPIView
+from .serializers import PagoCreateSerializer
 
-class PagoViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para gestionar los pagos.
-    Permite crear, listar, actualizar y eliminar pagos.
-    """
-    queryset = Pago.objects.select_related('folio_estancia').all()
-    serializer_class = PagoSerializer
-    permission_classes = [permissions.AllowAny]
+
+class PagoCreateAPIView(APIView):
+    def post(self, request):
+        serializer = PagoCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        pago = serializer.save()
+
+        folio = pago.folio_estancia
+        return Response({
+            "pago": {
+                "id": pago.id,
+                "estado": pago.estado,
+                "monto": str(pago.monto),
+                "metodo": pago.metodo,
+                "fecha_pago": str(pago.fecha_pago),
+                "referencia": pago.referencia,
+                "folio_id": folio.id,
+            },
+            "folio": {
+                "id": folio.id,
+                "estado": folio.estado,
+                "total_pagado": str(folio.total_pagado),
+                "reserva_total": str(folio.reserva.total),
+                "pendiente": "0.00",
+            }
+        }, status=status.HTTP_201_CREATED)
     
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['metodo', 'estado', 'referencia']
-    ordering_fields = ['fecha_pago', 'monto', 'created_at', 'id']
-    ordering = ['-fecha_pago', '-id']
-    
-    def get_queryset(self):
-        """
-        Opcionalmente filtra pagos por parámetros de query.
-        """
-        queryset = super().get_queryset()
-        
-        # Filtrar por estado
-        estado = self.request.query_params.get('estado', None)
-        if estado:
-            queryset = queryset.filter(estado=estado)
-        
-        # Filtrar por método
-        metodo = self.request.query_params.get('metodo', None)
-        if metodo:
-            queryset = queryset.filter(metodo__icontains=metodo)
-        
-        # Filtrar por folio_estancia
-        folio_estancia = self.request.query_params.get('folio_estancia', None)
-        if folio_estancia:
-            queryset = queryset.filter(folio_estancia_id=folio_estancia)
-        
-        return queryset
+
+class PagoListAPIView(ListAPIView):
+    """
+    GET /api/pagos/list/
+    Retorna todos los pagos realizados.
+    """
+    queryset = Pago.objects.all().order_by('-fecha_pago')
+    serializer_class = PagoCreateSerializer
+
+
+class PagoDetailAPIView(RetrieveAPIView):
+    """
+    GET /api/pagos/<id>/
+    Retorna el detalle de un pago específico.
+    """
+    queryset = Pago.objects.all()
+    serializer_class = PagoCreateSerializer
