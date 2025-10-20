@@ -2,6 +2,7 @@ from django.utils import timezone
 from rest_framework import serializers
 from django.db import transaction
 
+from apps.habitaciones.models import Habitacion
 from apps.reservas.models import Reserva
 from apps.folioestancias.models import FolioEstancia
 from apps.checkinout.models import CheckInOut
@@ -77,5 +78,8 @@ class CheckoutSerializer(serializers.ModelSerializer):
         reserva = instance.reserva
         reserva.estado = Reserva.REALIZADA
         reserva.save(update_fields=["estado"])
+        habitacion = reserva.habitacion
+        habitacion.estado = Habitacion.DISPONIBLE
+        habitacion.save()
 
         return instance

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.checkinout.serializers import CheckInCreateSerializer
+from apps.checkinout.serializers import CheckInCreateSerializer, CheckoutSerializer
 from apps.habitaciones.models import Habitacion
 from apps.reservas.models import Reserva
 
@@ -17,7 +17,8 @@ class ReservaSerializer(serializers.ModelSerializer):
         source='habitacion.numero',
         read_only=True
     )
-    ckeckinout = CheckInCreateSerializer(source="checkinout", read_only=True)
+    checkin = CheckInCreateSerializer(source="checkinout", read_only=True)
+    checkout = CheckoutSerializer(source="checkinout", read_only=True)
 
     class Meta:
         model = Reserva
@@ -34,7 +35,8 @@ class ReservaSerializer(serializers.ModelSerializer):
             'nombre_hotel',
             'habitacion',
             'nro_habitacion',
-            'ckeckinout',
+            'checkin',
+            'checkout',
         ]
 
     def get_nombre_huesped(self, obj):
