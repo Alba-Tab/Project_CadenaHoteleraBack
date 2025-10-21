@@ -79,3 +79,4 @@ class CheckoutSerializer(serializers.ModelSerializer):
         reserva.save(update_fields=["estado"])
 
         return instance
+    
