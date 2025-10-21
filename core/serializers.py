@@ -23,8 +23,8 @@ class TenantModelSerializer(serializers.ModelSerializer):
 
         if Domain.objects.filter(domain=full_domain).exists():
             raise serializers.ValidationError({"subdominio": "El dominio ya existe. Elige otro subdominio."})
-        #if ":" in full_domain or full_domain.startswith("www."):
-        #    raise serializers.ValidationError({"subdominio": "No incluir puerto ni 'www' en el dominio."})
+        if ":" in full_domain or full_domain.startswith("www."):
+            raise serializers.ValidationError({"subdominio": "No incluir puerto ni 'www' en el dominio."})
 
         attrs["schema_name"] = sub
         attrs["domain"] = full_domain
@@ -68,8 +68,8 @@ class TenantFormSerializer(serializers.ModelSerializer):
 
         if Domain.objects.filter(domain=full_domain).exists():
             raise serializers.ValidationError({"subdominio": "El dominio ya existe. Elige otro subdominio."})
-        #if ":" in full_domain or full_domain.startswith("www."):
-        #     raise serializers.ValidationError({"subdominio": "No incluir puerto ni 'www' en el dominio."})
+        if ":" in full_domain or full_domain.startswith("www."):
+             raise serializers.ValidationError({"subdominio": "No incluir puerto ni 'www' en el dominio."})
 
         attrs["schema_name"] = sub
         attrs["domain"] = full_domain

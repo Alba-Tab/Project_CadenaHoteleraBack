@@ -48,7 +48,7 @@ class TenantFormService:
         Hola {username},
 
         Se ha creado tu tenant {tenant.name}.
-        Accede en: http://{full_domain}/dashboard
+        Accede en: http://{full_domain}:4200/authentication/login
         tus credenciales son las siguientes:
         Usuario: {username}
         Contraseña: {password}
