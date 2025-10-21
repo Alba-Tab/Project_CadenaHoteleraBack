@@ -4,6 +4,7 @@ from rest_framework import status
 from apps.pagos.models import Pago
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from .serializers import PagoCreateSerializer
+from apps.fidelizacion.models import CuentaFidelizacion
 
 
 class PagoCreateAPIView(APIView):
@@ -12,15 +13,20 @@ class PagoCreateAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         pago = serializer.save()
 
-        folio = pago.folio_estancia
-        return Response({
+        folio = pago.folio_estancia #type:ignore
+        
+        # Obtener información de fidelización del cliente
+        cliente = folio.huesped
+        cuenta_fidelizacion = CuentaFidelizacion.objects.filter(cliente=cliente).first()
+        
+        response_data = {
             "pago": {
-                "id": pago.id,
-                "estado": pago.estado,
-                "monto": str(pago.monto),
-                "metodo": pago.metodo,
-                "fecha_pago": str(pago.fecha_pago),
-                "referencia": pago.referencia,
+                "id": pago.id,#type:ignore
+                "estado": pago.estado,#type:ignore
+                "monto": str(pago.monto),#type:ignore
+                "metodo": pago.metodo,#type:ignore
+                "fecha_pago": str(pago.fecha_pago),#type:ignore
+                "referencia": pago.referencia,#type:ignore
                 "folio_id": folio.id,
             },
             "folio": {
@@ -30,7 +36,17 @@ class PagoCreateAPIView(APIView):
                 "reserva_total": str(folio.reserva.total),
                 "pendiente": "0.00",
             }
-        }, status=status.HTTP_201_CREATED)
+        }
+        
+        # Agregar información de puntos si existe cuenta
+        if cuenta_fidelizacion:
+            response_data["fidelizacion"] = {
+                "puntos_acumulados": cuenta_fidelizacion.puntos_acumulados,
+                "programa": cuenta_fidelizacion.fidelizacion.nombre,
+                "puntos_ganados_este_pago": int(float(pago.monto))#type:ignore
+            }
+        
+        return Response(response_data, status=status.HTTP_201_CREATED)
     
 
 class PagoListAPIView(ListAPIView):
