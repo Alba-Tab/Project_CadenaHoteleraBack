@@ -48,6 +48,12 @@ class ReservaSerializer(serializers.ModelSerializer):
             'checkout',
             'folio',
         ]
+    def get_nombre_huesped(self, obj):
+        """Devuelve el nombre completo del huésped"""
+        if obj.huesped:
+            nombre = f"{obj.huesped.first_name or ''} {obj.huesped.last_name or ''}".strip()
+            return nombre if nombre else obj.huesped.username
+        return None
 
     # 🔸 Métodos que obtienen la información relacionada
     def get_checkin(self, obj):
