@@ -83,3 +83,4 @@ class CheckoutSerializer(serializers.ModelSerializer):
         habitacion.save()
 
         return instance
+    
