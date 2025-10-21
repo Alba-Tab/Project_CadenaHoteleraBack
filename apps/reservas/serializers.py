@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.checkinout.serializers import CheckInCreateSerializer, CheckoutSerializer
 from apps.habitaciones.models import Habitacion
 from apps.reservas.models import Reserva
 from apps.checkinout.models import CheckInOut
@@ -7,10 +8,7 @@ from apps.folioestancias.models import FolioEstancia
 
 
 class ReservaSerializer(serializers.ModelSerializer):
-    nombre_huesped = serializers.CharField(
-        source='huesped.firstname',
-        read_only=True
-    )
+    nombre_huesped = serializers.SerializerMethodField()
     nombre_hotel = serializers.CharField(
         source='hotel.nombre',
         read_only=True
@@ -22,6 +20,8 @@ class ReservaSerializer(serializers.ModelSerializer):
         source='habitacion.numero',
         read_only=True
     )
+    checkin = CheckInCreateSerializer(source="checkinout", read_only=True)
+    checkout = CheckoutSerializer(source="checkinout", read_only=True)
 
     # 🔹 Campos agregados para el front
     checkin = serializers.SerializerMethodField()

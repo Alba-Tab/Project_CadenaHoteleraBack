@@ -1,4 +1,6 @@
 from django.db import models
+from django.utils.timezone import localdate
+
 from apps.folioestancias.models import FolioEstancia
 
 
@@ -20,7 +22,10 @@ class Pago(models.Model):
         default=ESTADO_PENDIENTE,
         help_text="Estado actual del pago"
     )
-    fecha_pago = models.DateField(help_text="Fecha en que se realizó el pago")
+    fecha_pago = models.DateField(
+        auto_now_add=localdate(),
+        help_text="Fecha en que se realizó el pago"
+    )
     metodo = models.CharField(
         max_length=50,
         help_text="Método de pago utilizado (efectivo, tarjeta, transferencia, etc.)"
