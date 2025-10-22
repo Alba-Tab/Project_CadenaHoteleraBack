@@ -31,12 +31,12 @@ class FolioEstanciaSerializer(serializers.ModelSerializer):
             "hotel_nombre",
         ]
 
-class ServicioReservaSerializer(serializers.ModelSerializer):
-    nombre_servicio = serializers.CharField(source='servicio.nombre', read_only=True)
-
-    class Meta:
-        model = ServicioReserva
-        fields = ["id", "nombre_servicio", "cantidad", "monto_total"]
+# class ServicioReservaSerializer(serializers.ModelSerializer):
+#     nombre_servicio = serializers.CharField(source='servicio.nombre', read_only=True)
+#
+#     class Meta:
+#         model = ServicioReserva
+#         fields = ["id", "nombre_servicio", "cantidad", "monto_total"]
 
 
 # --- SERIALIZER DETALLE ---
@@ -69,3 +69,17 @@ class FolioDetalleSerializer(serializers.ModelSerializer):
             "hotel_nombre",
             "servicios_reservas",
         ]
+
+class DetalleFolioSerializer(serializers.ModelSerializer):
+    servicios_reservas = ServicioReservaSerializer(source='folioestancias', many=True)
+    class Meta:
+        model = FolioEstancia
+        fields = [
+            'id',
+            'estado',
+            'total_pagado',
+            'huesped',
+            'reserva',
+            'servicios_reservas'
+        ]
+        depth = 2  # Profundidad de anidamiento para incluir detalles del usuario y la reserva
