@@ -5,6 +5,7 @@ from core.models import Tenant, Domain
 import re
 
 DEFAULT_BASE_DOMAIN = getattr(settings, "TENANT_BASE_DOMAIN", "localhost")
+
 class TenantModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tenant
@@ -28,6 +29,8 @@ class TenantModelSerializer(serializers.ModelSerializer):
         attrs["schema_name"] = sub
         attrs["domain"] = full_domain
         return attrs
+    
+    
 class TenantFormSerializer(serializers.ModelSerializer):
     # Datos del formulario público
     first_name = serializers.CharField(max_length=150)
@@ -66,7 +69,7 @@ class TenantFormSerializer(serializers.ModelSerializer):
         if Domain.objects.filter(domain=full_domain).exists():
             raise serializers.ValidationError({"subdominio": "El dominio ya existe. Elige otro subdominio."})
         if ":" in full_domain or full_domain.startswith("www."):
-            raise serializers.ValidationError({"subdominio": "No incluir puerto ni 'www' en el dominio."})
+             raise serializers.ValidationError({"subdominio": "No incluir puerto ni 'www' en el dominio."})
 
         attrs["schema_name"] = sub
         attrs["domain"] = full_domain
