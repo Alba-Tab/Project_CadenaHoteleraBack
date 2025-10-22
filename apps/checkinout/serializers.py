@@ -42,6 +42,11 @@ class CheckInCreateSerializer(serializers.ModelSerializer):
 
         checkin = CheckInOut.objects.create(**validated_data)
 
+        # Cambiar el estado de la habitación a OCUPADA al hacer check-in
+        habitacion = reserva.habitacion
+        habitacion.estado = Habitacion.OCUPADA
+        habitacion.save(update_fields=['estado'])
+
         # Crear folio una sola vez por reserva
         FolioEstancia.objects.get_or_create(
             reserva=reserva,
