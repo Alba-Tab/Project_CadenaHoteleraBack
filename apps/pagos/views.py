@@ -15,8 +15,7 @@ class PagoCreateAPIView(APIView):
 
         folio = pago.folio_estancia #type:ignore
         
-        # Obtener información de fidelización del cliente
-        cliente = folio.huesped
+        cliente = folio.reserva.huesped
         cuenta_fidelizacion = CuentaFidelizacion.objects.filter(cliente=cliente).first()
         
         response_data = {
@@ -38,13 +37,20 @@ class PagoCreateAPIView(APIView):
             }
         }
         
-        # Agregar información de puntos si existe cuenta
         if cuenta_fidelizacion:
-            response_data["fidelizacion"] = {
+            fidelizacion_info = {
                 "puntos_acumulados": cuenta_fidelizacion.puntos_acumulados,
                 "programa": cuenta_fidelizacion.fidelizacion.nombre,
                 "puntos_ganados_este_pago": int(float(pago.monto))#type:ignore
             }
+            
+            # Si se aplicó descuento, incluir esa información
+            if hasattr(pago, '_descuento_aplicado') and pago._descuento_aplicado > 0:#type:ignore
+                fidelizacion_info["descuento_aplicado"] = str(pago._descuento_aplicado)#type:ignore
+                fidelizacion_info["puntos_canjeados"] = pago._puntos_canjeados#type:ignore
+                fidelizacion_info["monto_original"] = str(float(pago.monto) + float(pago._descuento_aplicado))#type:ignore
+            
+            response_data["fidelizacion"] = fidelizacion_info
         
         return Response(response_data, status=status.HTTP_201_CREATED)
     
