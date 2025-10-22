@@ -1,13 +1,8 @@
 from rest_framework import serializers
-from .models import Servicio, ServicioReserva
+from .models import Servicio
 
 class ServicioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Servicio
         fields = ["id", "nombre", "descripcion", "precio", "tipo", "created_at", "updated_at"]
 
-class ServicioReservaSerializer(serializers.ModelSerializer):
-    nombre_servicio = serializers.ReadOnlyField(source='servicio.nombre')
-    class Meta:
-        model = ServicioReserva
-        fields = '__all__'

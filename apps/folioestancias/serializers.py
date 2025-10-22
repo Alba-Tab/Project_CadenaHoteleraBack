@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from apps.folioestancias.models import FolioEstancia
-from apps.servicios.models import ServicioReserva
-from apps.servicios.serializers import ServicioReservaSerializer 
+from apps.servicios_asociados.models import ServiciosAsociados
+from apps.servicios_asociados.serializers import ServiciosAsociadosSerializer 
 
 class FolioEstanciaSerializer(serializers.ModelSerializer):
     # Campos calculados
@@ -31,13 +31,6 @@ class FolioEstanciaSerializer(serializers.ModelSerializer):
             "hotel_nombre",
         ]
 
-class ServicioReservaSerializer(serializers.ModelSerializer):
-    nombre_servicio = serializers.CharField(source='servicio.nombre', read_only=True)
-
-    class Meta:
-        model = ServicioReserva
-        fields = ["id", "nombre_servicio", "cantidad", "monto_total"]
-
 
 # --- SERIALIZER DETALLE ---
 class FolioDetalleSerializer(serializers.ModelSerializer):
@@ -48,7 +41,7 @@ class FolioDetalleSerializer(serializers.ModelSerializer):
     fecha_salida = serializers.DateField(source='reserva.fecha_salida', read_only=True)
 
     # servicios asociados a la reserva
-    servicios_reservas = ServicioReservaSerializer(
+    servicios_reservas = ServiciosAsociadosSerializer(
         many=True,
         read_only=True,
         source='reserva.servicios_reserva'  # <- debe coincidir con el related_name del modelo

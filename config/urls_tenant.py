@@ -7,11 +7,11 @@ from rest_framework_simplejwt.views import (
 from django.contrib import admin
 
 urlpatterns = [
-    path('api/', include('apps.hoteles.urls')),
+    path('api/hoteles/', include('apps.hoteles.urls')),
     path('api/', include("apps.usuarios.urls")),
-    #path('api/hoteles/', include('apps.hoteles.urls')),
     path('api/habitaciones/', include('apps.habitaciones.urls')),
-    path("api/", include("apps.servicios.urls")),# incluye servicios y servicioreservas
+    path("api/servicios/", include("apps.servicios.urls")),
+    path("api/serviciosasociados/", include("apps.servicios_asociados.urls")),
     path('api/reservas/', include('apps.reservas.urls')),
     path('api/folioestancias/', include('apps.folioestancias.urls')),
     path('api/fidelizacion/', include('apps.fidelizacion.urls')),
