@@ -11,7 +11,7 @@ from apps.reservas.services import procesar_reserva, actualizar_reserva
 
 # Create your views here.
 class ReservaViewSet(viewsets.ModelViewSet):
-    queryset = Reserva.objects.all()
+    queryset = Reserva.objects.all().order_by('-fecha_entrada')
     serializer_class = ReservaSerializer
     permission_classes = [AllowAny]
 

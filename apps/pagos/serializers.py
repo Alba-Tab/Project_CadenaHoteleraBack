@@ -47,40 +47,54 @@ class PagoCreateSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
+        # Extraer campos opcionales de fidelización
         canjear_puntos = validated_data.pop('canjear_puntos', False)
         monto_descuento = validated_data.pop('monto_descuento', None)
         
         folio: FolioEstancia = validated_data["folio_estancia"]
         cliente = folio.reserva.huesped
         
+        # Guardar el monto original del consumo
+        monto_consumo_total = validated_data['monto']
+        
+        # Variables para almacenar info de descuento
         descuento_aplicado = Decimal('0.00')
         puntos_canjeados = 0
+        monto_a_pagar = monto_consumo_total  # Por defecto, paga todo
         
+        # Si quiere canjear puntos, validar y aplicar descuento
         if canjear_puntos and monto_descuento and monto_descuento > 0:
             descuento_aplicado, puntos_canjeados = self._aplicar_descuento_fidelizacion(
                 cliente=cliente,
                 monto_descuento=float(monto_descuento),
-                total_cuenta=float(validated_data['monto'])
+                total_cuenta=float(monto_consumo_total)
             )
-            validated_data['monto'] = validated_data['monto'] - Decimal(descuento_aplicado)
+            # Calcular monto que realmente va a pagar (con descuento)
+            monto_a_pagar = monto_consumo_total - Decimal(descuento_aplicado)
         
-        # Crear el pago con el monto (ya con descuento aplicado si corresponde)
+        # Crear el pago con el monto que REALMENTE PAGA (con descuento si aplica)
         pago = Pago.objects.create(
-            **validated_data,
+            folio_estancia=validated_data["folio_estancia"],
+            monto=monto_a_pagar,  # Lo que paga (puede tener descuento)
+            metodo=validated_data.get("metodo"),
+            referencia=validated_data.get("referencia"),
+            fecha_pago=validated_data.get("fecha_pago"),
             estado=Pago.ESTADO_COMPLETADO,
         )
         
-        # Actualizar el folio
-        folio.total_pagado = (folio.total_pagado + pago.monto)
+        # Actualizar el folio con el MONTO TOTAL DE CONSUMO (sin descuento)
+        # El folio registra lo que consumió, no lo que pagó
+        folio.total_pagado = folio.total_pagado + monto_consumo_total
         folio.estado = FolioEstancia.PAGADO  
         folio.save(update_fields=["total_pagado", "estado"])
         
-        # Acumular puntos de fidelización por el pago realizado
+        # Acumular puntos de fidelización por el monto REALMENTE PAGADO
         self._acumular_puntos_fidelizacion(folio, pago)
         
         # Guardar info de descuento en el objeto para la respuesta
         pago._descuento_aplicado = descuento_aplicado  # type: ignore
         pago._puntos_canjeados = puntos_canjeados  # type: ignore
+        pago._monto_consumo_total = monto_consumo_total  # type: ignore
         
         return pago
     

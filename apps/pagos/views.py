@@ -18,11 +18,15 @@ class PagoCreateAPIView(APIView):
         cliente = folio.reserva.huesped
         cuenta_fidelizacion = CuentaFidelizacion.objects.filter(cliente=cliente).first()
         
+        # Determinar monto de consumo (puede ser diferente al monto pagado si hay descuento)
+        monto_consumo = pago._monto_consumo_total if hasattr(pago, '_monto_consumo_total') else pago.monto #type:ignore
+        
         response_data = {
             "pago": {
                 "id": pago.id,#type:ignore
                 "estado": pago.estado,#type:ignore
-                "monto": str(pago.monto),#type:ignore
+                "monto_pagado": str(pago.monto),#type:ignore
+                "monto_consumo": str(monto_consumo),
                 "metodo": pago.metodo,#type:ignore
                 "fecha_pago": str(pago.fecha_pago),#type:ignore
                 "referencia": pago.referencia,#type:ignore
@@ -31,9 +35,8 @@ class PagoCreateAPIView(APIView):
             "folio": {
                 "id": folio.id,
                 "estado": folio.estado,
-                "total_pagado": str(folio.total_pagado),
+                "total_consumido": str(folio.total_pagado),  # Consumo real registrado
                 "reserva_total": str(folio.reserva.total),
-                "pendiente": "0.00",
             }
         }
         
@@ -48,7 +51,6 @@ class PagoCreateAPIView(APIView):
             if hasattr(pago, '_descuento_aplicado') and pago._descuento_aplicado > 0:#type:ignore
                 fidelizacion_info["descuento_aplicado"] = str(pago._descuento_aplicado)#type:ignore
                 fidelizacion_info["puntos_canjeados"] = pago._puntos_canjeados#type:ignore
-                fidelizacion_info["monto_original"] = str(float(pago.monto) + float(pago._descuento_aplicado))#type:ignore
             
             response_data["fidelizacion"] = fidelizacion_info
         
