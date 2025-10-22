@@ -9,13 +9,22 @@ from django.contrib import admin
 urlpatterns = [
     path('api/', include("apps.usuarios.urls")),
     path('api/', include('apps.hoteles.urls')),
+
+    path('api/habitaciones/reportes/', include('apps.habitaciones.reportes.urls')),
     path('api/habitaciones/', include('apps.habitaciones.urls')),
+
     path("api/", include("apps.servicios.urls")),# incluye servicios y servicioreservas
+
+    path('api/reservas/reportes/', include('apps.reservas.reportes.urls')),
     path('api/reservas/', include('apps.reservas.urls')),
+
     path('api/folioestancias/', include('apps.folioestancias.urls')),
     path('api/fidelizacion/', include('apps.fidelizacion.urls')),
     path('api/checkinout/', include('apps.checkinout.urls')),
     path('api/', include('apps.pagos.urls')),
+
+    path('api/pagos/reportes/', include('apps.pagos.reportes.urls')),
+
     #añadi ests 2 para probar login si estorba, solo borrenlas
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
