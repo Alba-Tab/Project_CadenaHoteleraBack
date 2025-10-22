@@ -50,6 +50,7 @@ TENANT_APPS = [
     'apps.fidelizacion',
     'apps.checkinout',
     'apps.pagos',
+    'auditlog',
 ]
 
 
@@ -70,16 +71,20 @@ DEFAULT_FROM_EMAIL = env.str('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)#type
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
-    "django_tenants.middleware.TenantMainMiddleware",
-    'config.middleware.middleware_force_urlconf.ForcetenantUrlconfMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django_tenants.middleware.main.TenantMainMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "config.middleware.middleware_user_audit.JWTActorMiddleware", 
+    "auditlog.middleware.AuditlogMiddleware",
+    "config.middleware.middleware_auditlog.TenantAuditLogMiddleware",
+    "config.middleware.middleware_force_urlconf.ForcetenantUrlconfMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+#reorganize los middelewares para que el de JWTActorMiddleware esté antes que AuditlogMiddleware
 
 ROOT_URLCONF = "config.urls_public"
 PUBLIC_SCHEMA_URLCONF = "config.urls_public"
