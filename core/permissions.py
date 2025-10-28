@@ -21,14 +21,19 @@ class DentroDeCuota(BasePermission):
     """
     Permiso que valida si el tenant no ha excedido su cuota de recursos
     según su plan de suscripción.
+    Solo afecta a métodos no seguros (POST, PUT, PATCH, DELETE).
     """
     message = "Cuota de plan alcanzada."
     
     def has_permission(self, request, view):
+        # Permitir operaciones de lectura siempre
+        if request.method in SAFE_METHODS:
+            return True
+        
         # Obtener la suscripción del request
         suscripcion = getattr(request, "suscripcion", None)
         
-        # Validar que existe suscripción activa
+        # Validar que existe suscripción activa para operaciones de escritura
         if not suscripcion or not suscripcion.puede_escribir:
             self.message = "Suscripción inactiva o vencida."
             return False
