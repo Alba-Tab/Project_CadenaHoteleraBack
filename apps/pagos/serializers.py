@@ -4,11 +4,17 @@ from rest_framework import serializers
 
 from apps.pagos.models import Pago
 from apps.folioestancias.models import FolioEstancia
+from apps.fidelizacion.models import ProgramaFidelizacion, CuentaFidelizacion
+from apps.fidelizacion.services import FidelizacionService
 
 
 class PagoCreateSerializer(serializers.ModelSerializer):
     folio_id = serializers.PrimaryKeyRelatedField(
         queryset=FolioEstancia.objects.all(), source="folio_estancia"
+    )
+    canjear_puntos = serializers.BooleanField(default=False, write_only=True, required=False)
+    monto_descuento = serializers.DecimalField(
+        max_digits=10, decimal_places=2, write_only=True, required=False, allow_null=True
     )
 
     class Meta:
@@ -22,6 +28,8 @@ class PagoCreateSerializer(serializers.ModelSerializer):
             "referencia",
             "estado",
             "created_at",
+            "canjear_puntos",
+            "monto_descuento",
         ]
         read_only_fields = ["estado", "created_at"]
 
@@ -39,12 +47,119 @@ class PagoCreateSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
+        # Extraer campos opcionales de fidelización
+        canjear_puntos = validated_data.pop('canjear_puntos', False)
+        monto_descuento = validated_data.pop('monto_descuento', None)
+        
         folio: FolioEstancia = validated_data["folio_estancia"]
+        cliente = folio.reserva.huesped
+        
+        # Guardar el monto original del consumo
+        monto_consumo_total = validated_data['monto']
+        
+        # Variables para almacenar info de descuento
+        descuento_aplicado = Decimal('0.00')
+        puntos_canjeados = 0
+        monto_a_pagar = monto_consumo_total  # Por defecto, paga todo
+        
+        # Si quiere canjear puntos, validar y aplicar descuento
+        if canjear_puntos and monto_descuento and monto_descuento > 0:
+            descuento_aplicado, puntos_canjeados = self._aplicar_descuento_fidelizacion(
+                cliente=cliente,
+                monto_descuento=float(monto_descuento),
+                total_cuenta=float(monto_consumo_total)
+            )
+            # Calcular monto que realmente va a pagar (con descuento)
+            monto_a_pagar = monto_consumo_total - Decimal(descuento_aplicado)
+        
+        # Crear el pago con el monto que REALMENTE PAGA (con descuento si aplica)
         pago = Pago.objects.create(
-            **validated_data,
+            folio_estancia=validated_data["folio_estancia"],
+            monto=monto_a_pagar,  # Lo que paga (puede tener descuento)
+            metodo=validated_data.get("metodo"),
+            referencia=validated_data.get("referencia"),
+            fecha_pago=validated_data.get("fecha_pago"),
             estado=Pago.ESTADO_COMPLETADO,
         )
-        folio.total_pagado = (folio.total_pagado + pago.monto)
+        
+        # Actualizar el folio con el MONTO TOTAL DE CONSUMO (sin descuento)
+        # El folio registra lo que consumió, no lo que pagó
+        folio.total_pagado = folio.total_pagado + monto_consumo_total
         folio.estado = FolioEstancia.PAGADO  
         folio.save(update_fields=["total_pagado", "estado"])
+        
+        # Acumular puntos de fidelización por el monto REALMENTE PAGADO
+        self._acumular_puntos_fidelizacion(folio, pago)
+        
+        # Guardar info de descuento en el objeto para la respuesta
+        pago._descuento_aplicado = descuento_aplicado  # type: ignore
+        pago._puntos_canjeados = puntos_canjeados  # type: ignore
+        pago._monto_consumo_total = monto_consumo_total  # type: ignore
+        
         return pago
+    
+    def _aplicar_descuento_fidelizacion(self, cliente, monto_descuento, total_cuenta):
+        """
+        Valida y aplica el descuento usando el servicio de fidelización.
+        
+        Returns:
+            tuple: (descuento_aplicado, puntos_canjeados)
+        """
+        try:
+            # Buscar cuenta de fidelización del cliente
+            cuenta = CuentaFidelizacion.objects.filter(
+                cliente=cliente,
+                fidelizacion__activo=True
+            ).first()
+            
+            if not cuenta:
+                raise serializers.ValidationError({
+                    "canjear_puntos": "El cliente no tiene una cuenta de fidelización activa."
+                })
+            
+            # Usar el servicio para validar y canjear puntos
+            resultado = FidelizacionService.canjear_puntos(
+                cuenta_id=cuenta.pk,
+                monto_descuento=monto_descuento,
+                total_cuenta=total_cuenta
+            )
+            
+            return (Decimal(str(resultado['descuento_aplicado'])), resultado['puntos_canjeados'])
+            
+        except Exception as e:
+            raise serializers.ValidationError({
+                "canjear_puntos": f"Error al canjear puntos: {str(e)}"
+            })
+    
+    def _acumular_puntos_fidelizacion(self, folio: FolioEstancia, pago: Pago):
+        """
+        Busca o crea una cuenta de fidelización para el cliente y acumula puntos.
+        Si no existe un programa activo, no hace nada.
+        """
+        try:
+            # Obtener el cliente de la reserva
+            cliente = folio.reserva.huesped
+            
+            # Buscar un programa activo (tomar el primero disponible)
+            programa = ProgramaFidelizacion.objects.filter(activo=True).first()
+            
+            if not programa:
+                # No hay programa activo, no se acumulan puntos
+                return
+            
+            # Buscar o crear cuenta de fidelización
+            cuenta, created = CuentaFidelizacion.objects.get_or_create(
+                cliente=cliente,
+                fidelizacion=programa,
+                defaults={'puntos_acumulados': 0}
+            )
+            
+            # Acumular puntos usando el servicio (monto del pago = puntos)
+            FidelizacionService.acumular_puntos(
+                cuenta_id=cuenta.pk,
+                monto_gastado=float(pago.monto)
+            )
+            
+        except Exception as e:
+            # Log del error pero no fallar la transacción del pago
+            print(f"Error al acumular puntos de fidelización: {e}")
