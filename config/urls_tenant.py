@@ -7,7 +7,7 @@ from rest_framework_simplejwt.views import (
 from django.contrib import admin
 
 urlpatterns = [
-    path('api/hoteles/', include('apps.hoteles.urls')),
+    path('api/', include('apps.hoteles.urls')),
     path('api/', include("apps.usuarios.urls")),
     path('api/habitaciones/', include('apps.habitaciones.urls')),
     path("api/servicios/", include("apps.servicios.urls")),
