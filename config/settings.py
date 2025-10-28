@@ -34,13 +34,14 @@ SHARED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',  # ✨ NUEVO
     'corsheaders',
+    'apps.suscripciones',
 ]
 TENANT_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.auth',
     'rest_framework',
-    'rest_framework_simplejwt.token_blacklist',  # ✨ NUEVO (para logout seguro)
-    'apps.usuarios',  # your tenant-specific apps
+    'rest_framework_simplejwt.token_blacklist',
+    'apps.usuarios',
     'django.contrib.admin',
     'apps.hoteles',
     'apps.habitaciones',
