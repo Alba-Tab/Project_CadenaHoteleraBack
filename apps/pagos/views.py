@@ -4,6 +4,7 @@ from rest_framework import status
 from apps.pagos.models import Pago
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from .serializers import PagoCreateSerializer
+from apps.fidelizacion.models import CuentaFidelizacion
 
 
 class PagoCreateAPIView(APIView):
@@ -12,25 +13,48 @@ class PagoCreateAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         pago = serializer.save()
 
-        folio = pago.folio_estancia
-        return Response({
+        folio = pago.folio_estancia #type:ignore
+        
+        cliente = folio.reserva.huesped
+        cuenta_fidelizacion = CuentaFidelizacion.objects.filter(cliente=cliente).first()
+        
+        # Determinar monto de consumo (puede ser diferente al monto pagado si hay descuento)
+        monto_consumo = pago._monto_consumo_total if hasattr(pago, '_monto_consumo_total') else pago.monto #type:ignore
+        
+        response_data = {
             "pago": {
-                "id": pago.id,
-                "estado": pago.estado,
-                "monto": str(pago.monto),
-                "metodo": pago.metodo,
-                "fecha_pago": str(pago.fecha_pago),
-                "referencia": pago.referencia,
+                "id": pago.id,#type:ignore
+                "estado": pago.estado,#type:ignore
+                "monto_pagado": str(pago.monto),#type:ignore
+                "monto_consumo": str(monto_consumo),
+                "metodo": pago.metodo,#type:ignore
+                "fecha_pago": str(pago.fecha_pago),#type:ignore
+                "referencia": pago.referencia,#type:ignore
                 "folio_id": folio.id,
             },
             "folio": {
                 "id": folio.id,
                 "estado": folio.estado,
-                "total_pagado": str(folio.total_pagado),
+                "total_consumido": str(folio.total_pagado),  # Consumo real registrado
                 "reserva_total": str(folio.reserva.total),
-                "pendiente": "0.00",
             }
-        }, status=status.HTTP_201_CREATED)
+        }
+        
+        if cuenta_fidelizacion:
+            fidelizacion_info = {
+                "puntos_acumulados": cuenta_fidelizacion.puntos_acumulados,
+                "programa": cuenta_fidelizacion.fidelizacion.nombre,
+                "puntos_ganados_este_pago": int(float(pago.monto))#type:ignore
+            }
+            
+            # Si se aplicó descuento, incluir esa información
+            if hasattr(pago, '_descuento_aplicado') and pago._descuento_aplicado > 0:#type:ignore
+                fidelizacion_info["descuento_aplicado"] = str(pago._descuento_aplicado)#type:ignore
+                fidelizacion_info["puntos_canjeados"] = pago._puntos_canjeados#type:ignore
+            
+            response_data["fidelizacion"] = fidelizacion_info
+        
+        return Response(response_data, status=status.HTTP_201_CREATED)
     
 
 class PagoListAPIView(ListAPIView):

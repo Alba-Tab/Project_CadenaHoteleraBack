@@ -2,6 +2,7 @@ from django.utils import timezone
 from rest_framework import serializers
 from django.db import transaction
 
+from apps.habitaciones.models import Habitacion
 from apps.reservas.models import Reserva
 from apps.folioestancias.models import FolioEstancia
 from apps.checkinout.models import CheckInOut
@@ -41,6 +42,11 @@ class CheckInCreateSerializer(serializers.ModelSerializer):
 
         checkin = CheckInOut.objects.create(**validated_data)
 
+        # Cambiar el estado de la habitación a OCUPADA al hacer check-in
+        habitacion = reserva.habitacion
+        habitacion.estado = Habitacion.OCUPADA
+        habitacion.save(update_fields=['estado'])
+
         # Crear folio una sola vez por reserva
         FolioEstancia.objects.get_or_create(
             reserva=reserva,
@@ -77,5 +83,9 @@ class CheckoutSerializer(serializers.ModelSerializer):
         reserva = instance.reserva
         reserva.estado = Reserva.REALIZADA
         reserva.save(update_fields=["estado"])
+        habitacion = reserva.habitacion
+        habitacion.estado = Habitacion.DISPONIBLE
+        habitacion.save()
 
         return instance
+    

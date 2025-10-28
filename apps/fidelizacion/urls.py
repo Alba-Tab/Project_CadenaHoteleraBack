@@ -29,12 +29,7 @@ Parámetros de consulta para programas:
 - ?search=texto - Búsqueda en nombre y descripción
 
 Cuentas de Fidelización:
-- GET /cuentas/ - Listar todas las cuentas
-- POST /cuentas/ - Crear nueva cuenta
 - GET /cuentas/{id}/ - Obtener cuenta específica
-- PUT /cuentas/{id}/ - Actualizar cuenta completa
-- PATCH /cuentas/{id}/ - Actualizar cuenta parcialmente
-- DELETE /cuentas/{id}/ - Eliminar cuenta
 - GET /cuentas/mis_cuentas/ - Obtener cuentas del usuario autenticado
 - POST /cuentas/{id}/acumular_puntos/ - Acumular puntos
 - POST /cuentas/{id}/calcular_descuento/ - Calcular descuento disponible

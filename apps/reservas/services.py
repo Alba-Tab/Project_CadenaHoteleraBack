@@ -69,6 +69,12 @@ def actualizar_reserva(reserva, data):
     reserva.huesped = data.get('huesped', reserva.huesped)
     reserva.habitacion = habitacion
     reserva.hotel = data.get('hotel', reserva.hotel)
+
+    if reserva.estado == Reserva.CANCELADA or reserva.estado == Reserva.REALIZADA:
+        # Liberamos la habitación si la reserva es cancelada
+        habitacion.estado = Habitacion.DISPONIBLE
+        habitacion.save()
+
     # Guardamos los cambios
     reserva.save()
 
