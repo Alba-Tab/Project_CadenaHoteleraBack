@@ -34,6 +34,7 @@ SHARED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',  # ✨ NUEVO
     'corsheaders',
+    'apps.backups',  # MOVIDO A SHARED (debe estar en schema public) aqui registra todos los tenant
 ]
 TENANT_APPS = [
     'django.contrib.contenttypes',

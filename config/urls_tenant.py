@@ -9,6 +9,8 @@ from django.contrib import admin
 urlpatterns = [
     path('api/', include('apps.hoteles.urls')),
     path('api/', include("apps.usuarios.urls")),
+    # ruta para respaldos de tenants
+    path('api/', include('apps.backups.urls')),
     #path('api/hoteles/', include('apps.hoteles.urls')),
     path('api/habitaciones/', include('apps.habitaciones.urls')),
     path("api/", include("apps.servicios.urls")),# incluye servicios y servicioreservas
