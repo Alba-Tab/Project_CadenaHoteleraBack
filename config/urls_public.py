@@ -3,6 +3,7 @@ from django.http import HttpResponse
 
 urlpatterns = [
     path("", lambda r: HttpResponse("Página pública principal")),
-    path("api/suscripcion/", lambda r: HttpResponse("Detalles de planes y registro de hoteles")),
+    # 🔹 Rutas públicas para suscripciones (crear suscripciones, ver planes)
+    path("api/", include("apps.suscripciones.urls_public")),
     path("api/public/", include("core.urls")),
 ]

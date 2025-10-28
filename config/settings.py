@@ -73,6 +73,7 @@ DEFAULT_FROM_EMAIL = env.str('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)#type
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django_tenants.middleware.TenantMainMiddleware",
+    'apps.suscripciones.middleware.SuscripcionMiddleware',  # 🔹 Middleware de suscripciones
     'config.middleware.middleware_force_urlconf.ForcetenantUrlconfMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
