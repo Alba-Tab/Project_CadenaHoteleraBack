@@ -82,7 +82,7 @@ crear datos de prueba de pagos
 python manage.py tenant_command seed_pagos --schema=hotel_tajibo
 
 
-
+////////////////////////////////////////////////////////////////////////////
 para subircambios a la rama local y remota 
 
 git branch
@@ -91,6 +91,29 @@ git commit -m "nombre del commit"
 git push origin Noel-back-clean 
 
 
+para extraer cambios 
+para sincronizar todo
+git fetch origin
+
+cambiarme de mi rama a la Develop 
+git checkout develop
+
+para extraer los cambios a rama local develop 
+git pull origin develop
+
+para volver a mi rama nuevamente 
+git checkout noel
+
+para extrar o mescalr develop a mi rama local noel 
+git merge develop
+
+para seleccionar los archivos para commit
+git add .
+
+git commit -m (nombre para el commit )
+
+
+/////////////////////////////////////////////////////////////////////////////////
 
 al crear una tabla de una base de datos para agregar 
 
