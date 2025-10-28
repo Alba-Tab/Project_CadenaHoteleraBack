@@ -9,4 +9,5 @@ router.register('Mi-suscripcion', MySubscriptionView, basename='hotel')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('reportes/', include('apps.hoteles.reportes.urls')),
 ]

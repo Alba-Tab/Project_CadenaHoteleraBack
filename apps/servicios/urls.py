@@ -7,4 +7,5 @@ router.register(r"", ServicioViewSet, basename="servicio")
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("reportes/", include('apps.servicios.reportes.urls')),
 ]
