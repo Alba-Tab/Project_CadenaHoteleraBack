@@ -16,3 +16,8 @@ class PreviewRequestSerializer(serializers.Serializer):
 
 class ExportRequestSerializer(PreviewRequestSerializer):
     format = serializers.ChoiceField(choices=["xlsx", "docx", "pdf"])
+
+class EmailRequestSerializer(ExportRequestSerializer):
+    recipient_email = serializers.EmailField()
+    subject = serializers.CharField(max_length=255)
+    message = serializers.CharField(required=False, allow_blank=True)
