@@ -9,8 +9,6 @@ from django.contrib import admin
 urlpatterns = [
     path('api/', include('apps.hoteles.urls')),
     path('api/', include("apps.usuarios.urls")),
-    # ruta para respaldos de tenants
-    path('api/', include('apps.backups.urls')),
     #path('api/hoteles/', include('apps.hoteles.urls')),
     path('api/habitaciones/', include('apps.habitaciones.urls')),
     path("api/servicios/", include("apps.servicios.urls")),
@@ -20,6 +18,7 @@ urlpatterns = [
     path('api/fidelizacion/', include('apps.fidelizacion.urls')),
     path('api/checkinout/', include('apps.checkinout.urls')),
     path('api/', include('apps.pagos.urls')),
+    path('api/backups/', include('apps.backups.urls')),  # ✅ Más específico
     #añadi ests 2 para probar login si estorba, solo borrenlas
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
