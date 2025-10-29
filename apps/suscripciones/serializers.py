@@ -94,12 +94,12 @@ class UsoTenantSerializer(serializers.ModelSerializer):
 
 class EstadisticasUsoSerializer(serializers.Serializer):
     """Serializer para estadísticas de uso de un tenant."""
-    suscripcion = SuscripcionSerializer(read_only=True)
-    uso = UsoTenantSerializer(read_only=True)
-    limite_hoteles = serializers.IntegerField(read_only=True)
-    limite_usuarios = serializers.IntegerField(read_only=True)
-    puede_crear_hotel = serializers.BooleanField(read_only=True)
-    puede_crear_usuario = serializers.BooleanField(read_only=True)
+    suscripcion = serializers.DictField()
+    uso = serializers.DictField()
+    limite_hoteles = serializers.IntegerField()
+    limite_usuarios = serializers.IntegerField()
+    puede_crear_hotel = serializers.BooleanField()
+    puede_crear_usuario = serializers.BooleanField()
 
 
 class RenovarSuscripcionSerializer(serializers.Serializer):

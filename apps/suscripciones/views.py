@@ -171,7 +171,7 @@ class MiSuscripcionViewSet(viewsets.ReadOnlyModelViewSet):
             "puede_crear_usuario": uso.usuarios < suscripcion.plan.max_usuarios,
         }
         
-        serializer = EstadisticasUsoSerializer(data)
+        serializer = EstadisticasUsoSerializer(instance=data)
         return Response(serializer.data)
     
     @action(detail=False, methods=['post'])
