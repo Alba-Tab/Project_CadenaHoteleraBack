@@ -16,3 +16,23 @@ class PreviewRequestSerializer(serializers.Serializer):
 
 class ExportRequestSerializer(PreviewRequestSerializer):
     format = serializers.ChoiceField(choices=["xlsx", "docx", "pdf"])
+    
+
+class EmailReportRequestSerializer(serializers.Serializer):
+    columns = serializers.ListField(child=serializers.CharField())
+    filters = serializers.ListField(child=serializers.DictField(), default=list)
+    ordering = serializers.ListField(child=serializers.CharField(), default=list)
+    format = serializers.ChoiceField(choices=["xlsx", "docx", "pdf"])
+    
+    # Nuevos campos para email
+    recipient_email = serializers.EmailField(help_text="Email del destinatario")
+    subject = serializers.CharField(
+        max_length=200, 
+        required=False, 
+        help_text="Asunto del email (opcional)"
+    )
+    message = serializers.CharField(
+        required=False, 
+        allow_blank=True,
+        help_text="Mensaje adicional (opcional)"
+    )

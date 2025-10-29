@@ -1,11 +1,45 @@
 from typing import Iterable, Mapping, Tuple
 from io import BytesIO
+from datetime import datetime, date
+from decimal import Decimal
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
 from openpyxl import Workbook
 
 from docx import Document
 
 from fpdf import FPDF 
+
+def _clean_value_for_excel(value):
+    """Limpia valores para que sean compatibles con Excel"""
+    if value is None:
+        return ""
+    
+    # Convertir datetime y date a string
+    if isinstance(value, (datetime, date)):
+        return value.strftime("%Y-%m-%d %H:%M:%S") if isinstance(value, datetime) else value.strftime("%Y-%m-%d")
+    
+    # Convertir Decimal a float
+    if isinstance(value, Decimal):
+        return float(value)
+    
+    # Convertir boolean a string en español
+    if isinstance(value, bool):
+        return "Sí" if value else "No"
+    
+    # Asegurar que sea string y sin caracteres problemáticos
+    try:
+        s = str(value)
+    except Exception:
+        s = ""
+    
+    s = ILLEGAL_CHARACTERS_RE.sub("", s)  # 🔧 elimina \x00, \x0b, \x0c, etc.
+
+    # Opcional: Excel permite hasta 32,767 chars por celda
+    if len(s) > 32767:
+        s = s[:32767]
+
+    return s
 
 def export_xlsx(rows: Iterable[Mapping], filename: str) -> Tuple[bytes, str, str]:
     wb = Workbook()
@@ -16,9 +50,11 @@ def export_xlsx(rows: Iterable[Mapping], filename: str) -> Tuple[bytes, str, str
     if headers:
         ws.append(headers)
         for r in rows:
-            ws.append([r.get(h) for h in headers])
+            clean_row = [_clean_value_for_excel(r.get(h)) for h in headers]
+            ws.append(clean_row)
     bio = BytesIO()
-    wb.save(bio); bio.seek(0)
+    wb.save(bio) 
+    bio.seek(0)
     return bio.read(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", f"{filename}.xlsx"
 
 # a .docx

@@ -7,7 +7,8 @@ from rest_framework.response import Response
 from .base import ReportRegistry
 from .qbe import apply_filters, import_model, project_columns
 from .exporters import export_docx, export_xlsx, export_pdf
-from .serializers import PreviewRequestSerializer, ExportRequestSerializer
+from .email_service import send_report_email
+from .serializers import PreviewRequestSerializer, ExportRequestSerializer, EmailReportRequestSerializer
 
 from io import BytesIO
 
@@ -91,17 +92,68 @@ def build_views_for_registry(registry: ReportRegistry):
             resp = FileResponse(file_obj, as_attachment=True, filename=fn, content_type=ct)
             resp["X-Content-Type-Options"] = "nosniff"  # evita que clientes 'adivinen' el tipo
             return resp
+        
+    class ReportEmailView(views.APIView):
+        permission_classes = [IsReportViewer]
+        def post(self, request, slug: str):
+            r = _get(slug)
+            ser = EmailReportRequestSerializer(data=request.data)
+            ser.is_valid(raise_exception=True)
+            data = ser.validated_data
+            
+            # Generar reporte (mismo código que export)
+            model = import_model(r.model_path)
+            qs = model.objects.all()
+            qs = apply_filters(qs, r, data.get("filters", []))
+            ordering = data.get("ordering") or r.default_ordering
+            qs = qs.order_by(*ordering)
+            rows = project_columns(qs, data["columns"])
+            fname = slugify(r.name)
+            fmt = data["format"]
 
-    return ReportListView, ReportSchemaView, ReportPreviewView, ReportExportView
+            # Generar archivo
+            if fmt == "xlsx":
+                report_data = export_xlsx(rows, fname)
+            elif fmt == "docx":
+                report_data = export_docx(rows, r.name, fname)
+            elif fmt == "pdf":
+                report_data = export_pdf(rows, r.name, fname)
+            else:
+                return Response({"detail": "Formato no soportado"}, status=400)
+            
+            # Enviar por email
+            try:
+                send_report_email(
+                    recipient_email=data["recipient_email"],
+                    report_name=r.name,
+                    report_data=report_data,
+                    subject=data.get("subject"),
+                    message=data.get("message", "")
+                )
+                
+                return Response({
+                    "success": True,
+                    "message": f"Reporte enviado a {data['recipient_email']}"
+                })
+                
+            except Exception as e:
+                return Response({
+                    "success": False,
+                    "error": f"Error al enviar email: {str(e)}"
+                }, status=500)
+
+
+    return ReportListView, ReportSchemaView, ReportPreviewView, ReportExportView, ReportEmailView
 
 def build_urlpatterns_for_registry(registry: ReportRegistry):
-    ListV, SchemaV, PreviewV, ExportV = build_views_for_registry(registry)
+    ListV, SchemaV, PreviewV, ExportV, EmailV = build_views_for_registry(registry)
     from django.urls import path
     return [
         path('', ListV.as_view(), name='report-list'),
         path('<slug:slug>/schema', SchemaV.as_view(), name='report-schema'),
         path('<slug:slug>/preview', PreviewV.as_view(), name='report-preview'),
         path('<slug:slug>/export', ExportV.as_view(), name='report-export'),
+        path('<slug:slug>/email', EmailV.as_view(), name='report-email'),
     ]
 
 
