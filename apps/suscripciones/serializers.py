@@ -100,3 +100,29 @@ class EstadisticasUsoSerializer(serializers.Serializer):
     limite_usuarios = serializers.IntegerField(read_only=True)
     puede_crear_hotel = serializers.BooleanField(read_only=True)
     puede_crear_usuario = serializers.BooleanField(read_only=True)
+
+
+class RenovarSuscripcionSerializer(serializers.Serializer):
+    """Serializer para renovar una suscripción."""
+    plan_id = serializers.IntegerField(required=True)
+    
+    def validate_plan_id(self, value):
+        """Valida que el plan existe y está activo."""
+        try:
+            plan = Plan.objects.get(id=value, activo=True)
+            return plan
+        except Plan.DoesNotExist:
+            raise serializers.ValidationError("El plan seleccionado no existe o no está activo.")
+
+
+class PlanAgrupadoSerializer(serializers.Serializer):
+    """Serializer para planes agrupados por características similares."""
+    nombre = serializers.CharField()
+    max_usuarios = serializers.IntegerField()
+    max_hoteles = serializers.IntegerField()
+    variantes = serializers.ListField(
+        child=serializers.DictField(
+            child=serializers.CharField()
+        )
+    )
+
