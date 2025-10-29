@@ -3,6 +3,7 @@ from django.utils.text import slugify
 from rest_framework import serializers
 from core.models import Tenant, Domain
 import re
+from apps.suscripciones.models import Plan
 
 DEFAULT_BASE_DOMAIN = getattr(settings, "TENANT_BASE_DOMAIN", "localhost")
 
@@ -46,15 +47,29 @@ class TenantFormSerializer(serializers.ModelSerializer):
     domain = serializers.CharField(read_only=True)
     schema_name = serializers.CharField(read_only=True)
 
+    #campos para suscripcion
+    plan_id = serializers.IntegerField()
     class Meta:
         model = Tenant
         fields = [
             "first_name", "last_name", "email",
             "nombre_empresa", "username", "password",
-            "subdominio","domain", "schema_name"
+            "subdominio","domain", "schema_name", "plan_id"
         ]
 
     def validate(self, attrs):
+        # Validar que el plan existe y está activo
+        
+        plan_id = attrs.get("plan_id")
+        if not plan_id:
+            raise serializers.ValidationError({"plan_id": "El plan es requerido."})
+        
+        try:
+            plan = Plan.objects.get(id=plan_id, activo=True)
+            attrs["plan"] = plan  # Guardamos el objeto plan completo
+        except Plan.DoesNotExist:
+            raise serializers.ValidationError({"plan_id": "El plan seleccionado no existe o no está activo."})
+        
         # Normalizar subdominio
         base = attrs.get("subdominio") or attrs["nombre_empresa"]
         candidate = slugify(base, allow_unicode=False)
