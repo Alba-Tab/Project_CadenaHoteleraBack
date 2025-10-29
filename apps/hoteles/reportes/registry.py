@@ -1,6 +1,8 @@
 from apps._reporting.base import ReportDefinition, ReportField, ReportRegistry
 
-REGISTRY = ReportDefinition(
+REGISTRY = ReportRegistry()
+
+HOTELES_BASE = ReportDefinition(
     slug="hoteles_base",
     name="Hoteles (basico)",
     model_path="apps.hoteles.models.Hotel",

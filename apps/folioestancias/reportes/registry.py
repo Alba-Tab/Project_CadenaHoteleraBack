@@ -1,6 +1,8 @@
 from apps._reporting.base import ReportDefinition, ReportField, ReportRegistry
 
-REGISTRY = ReportDefinition(
+REGISTRY = ReportRegistry()
+
+FOLIOESTANCIAS_BASE = ReportDefinition(
     slug="folioestancias_base",
     name="Folios de Estancia (basico)",
     model_path="apps.folioestancias.models.FolioEstancia",
