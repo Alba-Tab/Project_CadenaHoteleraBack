@@ -14,18 +14,19 @@ HABITACIONES_BASE = ReportDefinition(
         ReportField("hotel__nombre", "Hotel", "str", ("eq","icontains","in")),
         ReportField("numero", "Número", "str", ("eq","icontains","in")),      # cambia si tu campo es 'codigo'
         ReportField("estado", "Estado", "str", ("eq","in","ne","icontains")), # ej. disponible/ocupada/mantenimiento
-        # Campos opcionales si existen en tu modelo:
-        # ReportField("tipo", "Tipo", "str", ("eq","in","icontains")),
-        # ReportField("precio_base", "Precio base", "decimal", ("eq","between","gte","lte")),
+        ReportField("tipo", "Tipo", "str", ("eq","in","icontains")),
+        ReportField("precio_noche", "Precio por noche", "decimal", ("eq","between","gte","lte")),
+        ReportField("capacidad", "Capacidad", "str", ("eq","icontains")),
+        ReportField("porcentaje_ocupacion", "% Ocupación (30 días)", "decimal", ()),  # Columna calculada
     ],
     filterable=[
         ReportField("hotel__nombre", "Hotel", "str", ("eq","icontains","in")),
         ReportField("estado", "Estado", "str", ("eq","in","ne","icontains")),
         ReportField("numero", "Número", "str", ("eq","icontains","in")),
-        # ReportField("tipo", "Tipo", "str", ("eq","in","icontains")),
-        # ReportField("precio_base", "Precio base", "decimal", ("between","gte","lte","eq")),
+        ReportField("tipo", "Tipo", "str", ("eq","in","icontains")),
+        ReportField("precio_noche", "Precio por noche", "decimal", ("between","gte","lte","eq")),
     ],
-    description="Listado y filtrado de habitaciones por hotel, número y estado.",
+    description="Listado y filtrado de habitaciones por hotel, número, estado y porcentaje de ocupación.",
 )
 
 REGISTRY.register(HABITACIONES_BASE)
