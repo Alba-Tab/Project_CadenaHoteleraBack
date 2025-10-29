@@ -5,12 +5,16 @@ from django_tenants.utils import schema_context
 from core.models import Tenant, Domain
 from django.core.mail import send_mail
 from config.settings import DEFAULT_FROM_EMAIL
+from datetime import timedelta
+from django.utils import timezone
+from apps.suscripciones.models import Suscripcion, UsoTenant
 class TenantFormService:
     @staticmethod
     @transaction.atomic
     def create_tenant_with_domain(validated: Dict[str, Any]) -> Dict[str, Any]:
         """
         Crea Tenant Domain esquema datos base y usuario admin del hotel.
+        Incluye creación de suscripción inicial basada en el plan seleccionado.
         si falla algo, rollback automático.
         """
         nombre = validated["first_name"]
@@ -21,6 +25,7 @@ class TenantFormService:
         password = validated["password"]
         schema_name = validated["schema_name"]
         full_domain = validated["domain"]
+        plan = validated["plan"]
 
         if Domain.objects.filter(domain=full_domain).exists():
             raise ValueError("Dominio ya existente.")
@@ -30,10 +35,35 @@ class TenantFormService:
         print("TENANT CREADO")
         Domain.objects.create(domain=full_domain, tenant=tenant, is_primary=True)
         print("DOMINIO CREADO")
-        # Crear datos del usuario
+        
+        # Calcular fechas de suscripción según el tipo de plan
+        inicio_periodo = timezone.now().date()
+        if plan.tipo == "Mensual":
+            fin_periodo = inicio_periodo + timedelta(days=30)
+        elif plan.tipo == "Anual":
+            fin_periodo = inicio_periodo + timedelta(days=365)
+        elif plan.tipo == "Trimestral":  # Trimestral
+            fin_periodo = inicio_periodo + timedelta(days=90)
+        else:
+            fin_periodo = inicio_periodo + timedelta(days=30)  # Default mensual
+        
+        # Crear suscripción en esquema público
+        suscripcion = Suscripcion.objects.create(
+            tenant=tenant,
+            plan=plan,
+            estado="activo",
+            inicio_periodo=inicio_periodo,
+            fin_periodo=fin_periodo
+        )
+        print(f"SUSCRIPCIÓN CREADA: {plan.nombre}")
+        
+        # Crear registro de uso del tenant
+        UsoTenant.objects.create(tenant=tenant)
+        print("REGISTRO DE USO CREADO")
+        
+        # Crear usuario admin en el esquema del tenant
         User = get_user_model()
         with schema_context(tenant.schema_name):
-
             User.objects.create_user(
                 username=username,
                 email=email,
@@ -42,19 +72,47 @@ class TenantFormService:
                 last_name=apellido,
                 is_staff=True,
             )
-            # Enviar correo de confirmación
-        subject = "Tenant creado exitosamente"
+        
+        # Enviar correo de confirmación con detalles del plan
+        subject = "¡Bienvenido! Tu cuenta ha sido creada exitosamente"
         message = f"""
-        Hola {username},
+        Hola {nombre} {apellido},
 
-        Se ha creado tu tenant {tenant.name}.
-        Accede en: http://{full_domain}/authentication/login
-        tus credenciales son las siguientes:
-        Usuario: {username}
-        Contraseña: {password}
+        ¡Bienvenido a {nombre_empresa}!
+
+        Tu cuenta ha sido creada exitosamente con los siguientes detalles:
+
+        ═══════════════════════════════════════
+        INFORMACIÓN DE ACCESO
+        ═══════════════════════════════════════
+        🌐 URL de acceso: http://{full_domain}/authentication/login
+        👤 Usuario: {username}
+        📧 Email: {email}
+
+        ═══════════════════════════════════════
+        DETALLES DE TU SUSCRIPCIÓN
+        ═══════════════════════════════════════
+        📦 Plan: {plan.nombre}
+        💰 Precio: ${plan.precio:.2f}
+        📅 Tipo: {plan.get_tipo_display()}
+        📆 Fecha de inicio: {inicio_periodo.strftime('%d/%m/%Y')}
+        📆 Fecha de vencimiento: {fin_periodo.strftime('%d/%m/%Y')}
+        ✅ Estado: Activo
+
+        ═══════════════════════════════════════
+        LÍMITES DE TU PLAN
+        ═══════════════════════════════════════
+        🏨 Hoteles: {plan.max_hoteles}
+        👥 Usuarios: {plan.max_usuarios}
+
+        Puedes comenzar a crear tus hoteles y gestionar tu cadena hotelera.
+
+        Si tienes alguna pregunta, no dudes en contactarnos.
+
+        ¡Que tengas un excelente día!
 
         Saludos,
-        Equipo de soporte
+        Equipo de Soporte
         """
         print("ENVIANDO EMAIL")
         send_mail(subject, message, DEFAULT_FROM_EMAIL, [email]) #type:ignore
@@ -66,6 +124,17 @@ class TenantFormService:
             "domain": full_domain,
             "admin_username": username,
             "admin_email": email,
+            "message":message,
+            "suscripcion": {
+                "plan_nombre": plan.nombre,
+                "plan_tipo": plan.get_tipo_display(),
+                "precio": plan.precio,
+                "inicio_periodo": inicio_periodo.isoformat(),
+                "fin_periodo": fin_periodo.isoformat(),
+                "estado": "activo",
+                "max_hoteles": plan.max_hoteles,
+                "max_usuarios": plan.max_usuarios,
+            }
         }
 
     @staticmethod

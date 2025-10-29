@@ -4,49 +4,67 @@ from django.core.validators import MinValueValidator
 from django.utils import timezone
 
 class TipoChoices(models.TextChoices):
-    MENSUAL = "Mensual","mensual"
-    ANUAL = "Anual","anual"
-    TRIMESTRAL = "T","Trimestral"
+    MENSUAL = "Mensual", "Mensual"
+    ANUAL = "Anual", "Anual"
+    TRIMESTRAL = "Trimestral", "Trimestral"
 
 class EstadoChoises(models.TextChoices):
-    ACTIVO = "activo","activo"
-    VENCIDO = "vencido","vencido"
-    PAUSADO = "pausado","pausado"
-    CANCELADO = "cancelado","cancelado"
-    PRUEBA = "prueba","prueba"
+    ACTIVO = "activo", "Activo"
+    VENCIDO = "vencido", "Vencido"
+    PAUSADO = "pausado", "Pausado"
+    CANCELADO = "cancelado", "Cancelado"
+    PRUEBA = "prueba", "Prueba"
 
 class Plan(models.Model):
-    nombre = models.CharField(max_length=30, unique=True)
-    max_users = models.IntegerField(default=5)
-    max_hotels = models.IntegerField(default=1)
+    nombre = models.CharField(max_length=30)
+    max_usuarios = models.IntegerField(default=5)
+    max_hoteles = models.IntegerField(default=1)
     precio = models.FloatField()
-    Tipo = models.CharField(max_length=12, choices=TipoChoices.choices)
-    is_active  = models.BooleanField(default=True)
+    tipo = models.CharField(max_length=12, choices=TipoChoices.choices)
+    activo = models.BooleanField(default=True)
+    
+    def __str__(self):
+        constraints = [
+            models.UniqueConstraint(fields=['nombre', 'tipo'], name='unique_nombre_tipo')
+        ]
+        ordering = ['nombre', 'tipo']
+        return f"{self.nombre} - {self.tipo}"
     
 
 class Suscripcion(models.Model):
-    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE)
-    plan = models.ForeignKey(Plan,on_delete=models.PROTECT)
-    status = models.CharField(max_length=20,choices=EstadoChoises.choices)
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name='suscripciones')
+    plan = models.ForeignKey(Plan, on_delete=models.PROTECT)
+    estado = models.CharField(max_length=20, choices=EstadoChoises.choices)
     inicio_periodo = models.DateField()
     fin_periodo = models.DateField()
     
-    def is_active(self):
-        return self.status=="activo"
+    def __str__(self):
+        return f"{self.tenant.schema_name} - {self.plan.nombre} ({self.estado})"
+    
+    def esta_activa(self):
+        """Verifica si la suscripción está activa."""
+        return self.estado == "activo"
     
     @property
-    def is_active_for_writes(self) -> bool:
+    def puede_escribir(self) -> bool:
         """Regla mínima para permitir crear recursos."""
-        if self.status in ("activo", "prueba"):
-            return self.fin_periodo >= timezone.now()
+        if self.estado in ("activo", "prueba"):
+            return self.fin_periodo >= timezone.now().date()
         return False
 
-class TenantUsage(models.Model):
+class UsoTenant(models.Model):
     """
     Contadores materializados por inquilino para validar cuotas con baja latencia
     y sin hacer COUNTs costosos en el esquema del tenant.
     """
-    tenant = models.OneToOneField(Tenant, on_delete=models.CASCADE, related_name="usage")
-    hotels = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0)])
-    users  = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0)])
-    last_reset = models.DateTimeField(default=timezone.now)
+    tenant = models.OneToOneField(Tenant, on_delete=models.CASCADE, related_name="uso")
+    hoteles = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0)])
+    usuarios = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0)])
+    ultima_actualizacion = models.DateTimeField(default=timezone.now)
+    
+    class Meta:
+        verbose_name = "Uso de Tenant"
+        verbose_name_plural = "Usos de Tenants"
+    
+    def __str__(self):
+        return f"{self.tenant.schema_name} - Hoteles: {self.hoteles}, Usuarios: {self.usuarios}"

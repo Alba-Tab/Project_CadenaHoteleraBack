@@ -4,10 +4,13 @@ from django.http import HttpResponse
 #     TokenObtainPairView,
 #     TokenRefreshView,
 # )
+from django.contrib import admin
 
 urlpatterns = [
+    path('admin/', admin.site.urls),
     path("", lambda r: HttpResponse("Página pública principal")),
-    path("api/suscripcion/", lambda r: HttpResponse("Detalles de planes y registro de hoteles")),
+    # 🔹 Rutas públicas para suscripciones (crear suscripciones, ver planes)
+    path("api/", include("apps.suscripciones.urls_public")),
     path("api/public/", include("core.urls")),
     path("api/backups/", include("apps.backups.urls")),  # ✅ URLs de backups
     # path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
