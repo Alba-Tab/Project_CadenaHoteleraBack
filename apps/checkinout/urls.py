@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from .views import CheckInCreateAPIView, CheckoutAPIView, CheckInListAPIView, CheckInDetailAPIView
 
 urlpatterns = [
@@ -6,4 +6,5 @@ urlpatterns = [
     path('checkout/<int:reserva_id>/', CheckoutAPIView.as_view(), name='checkout'),
      path('list/', CheckInListAPIView.as_view(), name='checkin-list'),
     path('<int:pk>/', CheckInDetailAPIView.as_view(), name='checkin-detail'),
+    path('reportes/', include('apps.checkinout.reportes.urls')),
 ]

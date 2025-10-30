@@ -9,6 +9,7 @@ router.register(r'cuentas', CuentaFidelizacionViewSet, basename='cuenta-fideliza
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('reportes/', include('apps.fidelizacion.reportes.urls')),
 ]
 
 """

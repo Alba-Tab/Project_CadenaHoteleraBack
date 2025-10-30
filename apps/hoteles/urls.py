@@ -8,4 +8,5 @@ router.register('hoteles', HotelViewSet, basename='hotel')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('reportes/', include('apps.hoteles.reportes.urls')),
 ]
