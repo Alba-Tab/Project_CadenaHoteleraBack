@@ -27,13 +27,13 @@ class FolioEstanciaViewSet(viewsets.ReadOnlyModelViewSet):
         detail=True,
         methods=['get'],
         url_path='detalle-folio',
-        serializer_class=DetalleFolioSerializer
+        serializer_class=FolioDetalleSerializer
     )
     def detalle_folio(self, request, pk=None):
         # Obtener el folio de estancia específico
         folio = self.get_object()
         # Serializar y devolver los detalles del folio
-        serializer = DetalleFolioSerializer(folio)
+        serializer = FolioDetalleSerializer(folio)
         return Response(serializer.data)
 
     @action(
