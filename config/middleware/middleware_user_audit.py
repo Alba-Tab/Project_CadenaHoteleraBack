@@ -14,5 +14,5 @@ class JWTActorMiddleware(MiddlewareMixin):
                 request.user = user
                 set_actor(user)  # <- le dice a auditlog quién es el actor
         except Exception:
-            disable_auditlog()  # Evita registrar acciones anónimas
+            disable_auditlog()  # Evita registrar acciones anónim
         return None

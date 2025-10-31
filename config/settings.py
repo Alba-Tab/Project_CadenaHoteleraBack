@@ -50,7 +50,7 @@ TENANT_APPS = [
     'apps.fidelizacion',
     'apps.checkinout',
     'apps.pagos',
-    'auditlog',
+    'auditlog', # Auditlog app for tenant schemas
 ]
 
 

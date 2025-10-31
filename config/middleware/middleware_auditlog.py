@@ -13,3 +13,4 @@ class TenantAuditLogMiddleware(MiddlewareMixin):
                 print(f"Auditoría inicializada para schema: {tenant.schema_name}")
             self._initialized_tenants.add(tenant.schema_name)
         return None
+# Middleware to initialize audit logging for each tenant schema on first request.

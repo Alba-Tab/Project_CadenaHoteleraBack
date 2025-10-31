@@ -18,3 +18,4 @@ class LogEntrySerializer(serializers.ModelSerializer):
             'remote_addr',
             'timestamp',
         ]
+#serializaer de auditoria
