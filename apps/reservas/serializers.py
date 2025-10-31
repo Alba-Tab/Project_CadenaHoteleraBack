@@ -85,7 +85,7 @@ class ReservaSerializer(serializers.ModelSerializer):
         folio = FolioEstancia.objects.filter(reserva=obj).first()
         if folio:
             return {
-                "id": folio.id,
+                "id": folio.id,#type:ignore
                 "estado": folio.estado,
                 "total_pagado": str(folio.total_pagado),
             }

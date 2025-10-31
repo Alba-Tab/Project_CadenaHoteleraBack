@@ -9,14 +9,15 @@ from django.contrib import admin
 urlpatterns = [
     path('api/', include('apps.hoteles.urls')),
     path('api/', include("apps.usuarios.urls")),
-    #path('api/hoteles/', include('apps.hoteles.urls')),
     path('api/habitaciones/', include('apps.habitaciones.urls')),
-    path("api/", include("apps.servicios.urls")),# incluye servicios y servicioreservas
+    path("api/servicios/", include("apps.servicios.urls")),
+    path("api/servicios-asociados/", include("apps.servicios_asociados.urls")),
     path('api/reservas/', include('apps.reservas.urls')),
     path('api/folioestancias/', include('apps.folioestancias.urls')),
     path('api/fidelizacion/', include('apps.fidelizacion.urls')),
     path('api/checkinout/', include('apps.checkinout.urls')),
     path('api/', include('apps.pagos.urls')),
+    path('api/', include('apps.suscripciones.urls')),  # 🔹 Rutas de suscripciones
     #añadi ests 2 para probar login si estorba, solo borrenlas
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
@@ -24,4 +25,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('core.urls')),#ebcargado de la auditoria
 ]
+
 

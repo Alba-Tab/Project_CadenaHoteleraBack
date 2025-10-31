@@ -1,4 +1,5 @@
 from django.db import models
+from decimal import Decimal
 
 from apps.reservas.models import Reserva
 from apps.usuarios.models import User
@@ -25,3 +26,16 @@ class FolioEstancia(models.Model):
         null=False,
         blank=False,
     )
+    
+    def calcular_total_general(self):
+        """Calcula el total general del folio (reserva + servicios)"""
+        from apps.servicios_asociados.models import ServiciosAsociados
+        
+        total_reserva = Decimal(self.reserva.total)
+        servicios = ServiciosAsociados.objects.filter(folioestancia=self)
+        total_servicios = sum(Decimal(s.monto_total) for s in servicios)
+        
+        return total_reserva + total_servicios
+    
+    def __str__(self):
+        return f"Folio #{self.pk} - {self.huesped.get_full_name()} - {self.estado}"
