@@ -7,4 +7,7 @@ router.register("usuarios", UserViewSet, basename="usuario")
 router.register("roles", RoleViewSet, basename="role")
 router.register("permisos", PermissionViewSet, basename="permiso")
 
-urlpatterns = router.urls
+urlpatterns = [
+    path("", include(router.urls)),
+    path("reportes/", include('apps.usuarios.reportes.urls')),  # ← Nueva línea
+]
