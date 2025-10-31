@@ -142,11 +142,18 @@ def build_views_for_registry(registry: ReportRegistry):
                     "error": f"Error al enviar email: {str(e)}"
                 }, status=500)
 
+    class ReportQBEView(views.APIView):
+        permission_classes = [IsReportViewer]
+        def post(self, request, slug: str):
+            r = _get(slug)
+            # Interfaz más amigable para QBE
+            # Permite queries más complejas con AND/OR
+            pass
 
-    return ReportListView, ReportSchemaView, ReportPreviewView, ReportExportView, ReportEmailView
+    return ReportListView, ReportSchemaView, ReportPreviewView, ReportExportView, ReportEmailView, ReportQBEView
 
 def build_urlpatterns_for_registry(registry: ReportRegistry):
-    ListV, SchemaV, PreviewV, ExportV, EmailV = build_views_for_registry(registry)
+    ListV, SchemaV, PreviewV, ExportV, EmailV, QBEV = build_views_for_registry(registry)
     from django.urls import path
     return [
         path('', ListV.as_view(), name='report-list'),
@@ -154,6 +161,15 @@ def build_urlpatterns_for_registry(registry: ReportRegistry):
         path('<slug:slug>/preview', PreviewV.as_view(), name='report-preview'),
         path('<slug:slug>/export', ExportV.as_view(), name='report-export'),
         path('<slug:slug>/email', EmailV.as_view(), name='report-email'),
+        path('<slug:slug>/qbe', QBEV.as_view(), name='report-qbe'),
     ]
 
+# # Endpoints existentes, se usa de ejemplo habitaciones
+# GET  /api/habitaciones/reportes/
+# GET  /api/habitaciones/reportes/habitaciones_base/schema
+# POST /api/habitaciones/reportes/habitaciones_base/preview
+# POST /api/habitaciones/reportes/habitaciones_base/export
+# POST /api/habitaciones/reportes/habitaciones_base/email
 
+# # Nuevo endpoint QBE
+# POST /api/habitaciones/reportes/habitaciones_base/qbe

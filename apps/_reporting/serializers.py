@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from .qbe import OP_LOOKUPS
 
 
 #valida columns/filters/ordering/limit y formato.
@@ -36,3 +37,14 @@ class EmailReportRequestSerializer(serializers.Serializer):
         allow_blank=True,
         help_text="Mensaje adicional (opcional)"
     )
+
+
+class QBEFilterSerializer(serializers.Serializer):
+    field = serializers.CharField()
+    op = serializers.ChoiceField(choices=list(OP_LOOKUPS.keys()))
+    value = serializers.JSONField(required=False, allow_null=True)
+    
+    def validate(self, data):
+        # Validar que el field existe en el reporte
+        # Validar que el op es válido para el tipo de campo
+        return data

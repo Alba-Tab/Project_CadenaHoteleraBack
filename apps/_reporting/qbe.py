@@ -16,6 +16,15 @@ OP_LOOKUPS = {
     "between": "range",
     "in": "in",
     "isnull": "isnull",
+    "startswith": "startswith",
+    "istartswith": "istartswith", 
+    "endswith": "endswith",
+    "iendswith": "iendswith",
+    "regex": "regex",
+    "iregex": "iregex",
+    "year": "year",           # Para fechas
+    "month": "month",         # Para fechas
+    "day": "day",            # Para fechas
 }
 
 # def import_model(model_path: str) -> type[Model]:
