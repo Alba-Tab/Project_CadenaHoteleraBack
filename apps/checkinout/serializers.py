@@ -6,12 +6,14 @@ from apps.habitaciones.models import Habitacion
 from apps.reservas.models import Reserva
 from apps.folioestancias.models import FolioEstancia
 from apps.checkinout.models import CheckInOut
+from apps.facial_recognition.services import FacialRecognitionService
 
 
 class CheckInCreateSerializer(serializers.ModelSerializer):
     reserva_id = serializers.PrimaryKeyRelatedField(
         queryset=Reserva.objects.all(), source="reserva", write_only=True
     )
+    photo_checkin = serializers.ImageField(write_only=True, required=True)
 
     class Meta:
         model = CheckInOut
@@ -21,16 +23,42 @@ class CheckInCreateSerializer(serializers.ModelSerializer):
             "fecha_checkin",
             "hora_checkin",
             "observaciones",
+            "photo_checkin",
         ]
 
     def validate(self, attrs):
         reserva: Reserva = attrs["reserva"]
+        photo_checkin = attrs.pop("photo_checkin")
+        
         # No permitir check-in si ya existe
         if hasattr(reserva, "checkinout"):
             raise serializers.ValidationError("Esta reserva ya tiene un check-in registrado.")
-        # (Opcional) Validar estado de la reserva
+        # Validar estado de la reserva
         if reserva.estado not in (Reserva.CONFIRMADA, Reserva.REALIZADA, Reserva.PENDIENTE):
             raise serializers.ValidationError("La reserva no permite check-in por su estado actual.")
+        
+        # Verificación facial con AWS
+        try:
+            from django.core.files.storage import default_storage
+            temp_path = default_storage.save(f'temp_checkin/{reserva.id}.jpg', photo_checkin)
+            
+            result = FacialRecognitionService.search_face(temp_path)
+            
+            default_storage.delete(temp_path)
+            
+            if not result:
+                raise serializers.ValidationError("Rostro no reconocido.")
+            
+            if result['user_id'] != reserva.huesped.id:
+                raise serializers.ValidationError(
+                    f"La persona no coincide con el huésped de la reserva."
+                )
+            
+        except serializers.ValidationError:
+            raise
+        except Exception as e:
+            raise serializers.ValidationError(f"Error en verificación facial: {str(e)}")
+        
         return attrs
 
     @transaction.atomic
@@ -65,12 +93,24 @@ class CheckoutSerializer(serializers.ModelSerializer):
         fields = ["id", "fecha_checkout", "hora_checkout", "observaciones"]
 
     def validate(self, attrs):
+        if not self.instance:
+            raise serializers.ValidationError("No se encontró el check-in.")
+        
         checkin: CheckInOut = self.instance
+        
+        # Verificar si ya tiene checkout
+        if checkin.fecha_checkout:
+            raise serializers.ValidationError("Esta reserva ya tiene check-out registrado.")
+        
+        # Validar folio (opcional - solo advertencia)
         folio = checkin.reserva.folios_estancia.first()
         if folio is None:
-            raise serializers.ValidationError("No existe folio para esta reserva.")
-        if folio.estado != FolioEstancia.PAGADO:
-            raise serializers.ValidationError("No se puede hacer check-out hasta que el folio esté Pagado.")
+            # Solo advertencia, no error crítico
+            print("⚠️ Advertencia: No existe folio para esta reserva.")
+        elif folio.estado != FolioEstancia.PAGADO:
+            # Solo advertencia, no error crítico
+            print(f"⚠️ Advertencia: El folio está en estado {folio.estado}, no PAGADO.")
+        
         return attrs
 
     def update(self, instance, validated_data):

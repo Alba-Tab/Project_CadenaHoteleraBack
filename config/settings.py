@@ -1,5 +1,5 @@
 from pathlib import Path
-import environ
+import environ 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(DEBUG=(bool, False))
@@ -52,6 +52,8 @@ TENANT_APPS = [
     'apps.checkinout',
     'apps.pagos',
     'apps.servicios_asociados',
+    'apps.facial_recognition',
+    "storages",
     'auditlog',
 ]
 
@@ -170,3 +172,33 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# AWS S3 Configuration
+AWS_ACCESS_KEY_ID = env.str("AWS_ACCESS_KEY_ID", default="") #type:ignore
+AWS_SECRET_ACCESS_KEY = env.str("AWS_SECRET_ACCESS_KEY", default="") #type:ignore
+AWS_STORAGE_BUCKET_NAME = env.str("AWS_STORAGE_BUCKET_NAME", default="si2-hoteles") #type:ignore
+AWS_S3_REGION_NAME = env.str("AWS_S3_REGION_NAME", default="us-east-2")  #type:ignore
+
+# S3 Configuration
+AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL = None  # None para buckets con ACLs deshabilitadas (configuración moderna)
+AWS_QUERYSTRING_AUTH = False  # No incluir query strings en las URLs
+AWS_S3_SIGNATURE_VERSION = 's3v4'
+AWS_S3_VERIFY = True  # Verificar certificados SSL
+
+# Storage backends
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+# Media files URL
+MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
+MEDIA_ROOT = '' 
+
+from storages.backends.s3boto3 import S3Boto3Storage
+from django.core.files.storage import default_storage
+
+default_storage._wrapped = S3Boto3Storage() # type: ignore

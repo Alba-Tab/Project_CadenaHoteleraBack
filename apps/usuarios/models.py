@@ -3,7 +3,8 @@ from django.db import models
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
-
+    photo = models.ImageField(upload_to='photos/', null=True, blank=True)
+    
     class Meta:
         permissions = [
             ("can_manage_hotels", "Can manage hotels"),
