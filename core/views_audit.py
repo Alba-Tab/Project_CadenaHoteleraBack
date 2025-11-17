@@ -23,3 +23,4 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(actor__username__icontains=usuario)
 
         return queryset
+# Vista para acceder a los logs de auditoría

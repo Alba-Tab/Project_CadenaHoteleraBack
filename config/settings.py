@@ -34,13 +34,14 @@ SHARED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',  # ✨ NUEVO
     'corsheaders',
+    'apps.suscripciones',
 ]
 TENANT_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.auth',
     'rest_framework',
-    'rest_framework_simplejwt.token_blacklist',  # ✨ NUEVO (para logout seguro)
-    'apps.usuarios',  # your tenant-specific apps
+    'rest_framework_simplejwt.token_blacklist',
+    'apps.usuarios',
     'django.contrib.admin',
     'apps.hoteles',
     'apps.habitaciones',
@@ -50,6 +51,7 @@ TENANT_APPS = [
     'apps.fidelizacion',
     'apps.checkinout',
     'apps.pagos',
+    'apps.servicios_asociados',
     'auditlog',
 ]
 
@@ -72,6 +74,7 @@ DEFAULT_FROM_EMAIL = env.str('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)#type
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django_tenants.middleware.main.TenantMainMiddleware",
+    'apps.suscripciones.middleware.SuscripcionMiddleware',  # 🔹 Middleware de suscripciones
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",

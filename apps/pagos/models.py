@@ -22,8 +22,8 @@ class Pago(models.Model):
         default=ESTADO_PENDIENTE,
         help_text="Estado actual del pago"
     )
-    fecha_pago = models.DateField(
-        auto_now_add=localdate(),
+    fecha_pago = models.DateTimeField(
+        auto_now_add=True,
         help_text="Fecha en que se realizó el pago"
     )
     metodo = models.CharField(
@@ -67,7 +67,7 @@ class Pago(models.Model):
         ]
 
     def __str__(self):
-        return f"Pago {self.id} - {self.get_estado_display()} - ${self.monto} - {self.metodo}"
+        return f"Pago {self.id} - {self.get_estado_display()} - ${self.monto} - {self.metodo}" #type:ignore
     
     def is_completado(self):
         """Retorna True si el pago está completado."""

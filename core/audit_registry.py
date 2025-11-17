@@ -19,3 +19,4 @@ def register_audit_models():
     auditlog.register(User)
     auditlog.register(Hotel)
   
+#auditoria

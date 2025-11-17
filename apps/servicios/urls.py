@@ -1,11 +1,11 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ServicioViewSet, ServicioReservaViewSet
+from .views import ServicioViewSet
 
 router = DefaultRouter()
-router.register(r"servicios", ServicioViewSet, basename="servicio")
-router.register(r"servicioreservas", ServicioReservaViewSet, basename="servicioreserva")
+router.register(r"", ServicioViewSet, basename="servicio")
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("reportes/", include('apps.servicios.reportes.urls')),
 ]

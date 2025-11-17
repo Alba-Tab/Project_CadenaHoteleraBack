@@ -6,7 +6,7 @@ from .views_audit import AuditLogViewSet
 router = DefaultRouter()
 router.register("tenants", TenantViewSet, basename="tenant")
 router.register("tenants-forms", TenantFormViewSet, basename="tenant-form")
-router.register("auditoria", AuditLogViewSet, basename="auditoria")
+router.register("auditoria", AuditLogViewSet, basename="auditoria")#auditoria
 
 urlpatterns = [
     path("tenants-public/", PublicSchemaView.as_view(), name="tenant-public"),  # ← APIView
