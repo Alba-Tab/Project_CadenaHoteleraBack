@@ -9,7 +9,7 @@ SECRET_KEY = env.str("SECRET_KEY", default="secretos") #type:ignore
 
 DEBUG = env.bool("DEBUG", default=True) #type:ignore
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"]) #type:ignore
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS",default=["*"]) #type:ignore
 DATABASES = {
     "default": {
         "ENGINE": "django_tenants.postgresql_backend",
