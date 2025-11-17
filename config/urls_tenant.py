@@ -50,8 +50,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('core.urls')),#ebcargado de la auditoria
 
-    path('api/habitaciones/reportes/', include('apps.habitaciones.reportes.urls')),
-
 ]
 
 
