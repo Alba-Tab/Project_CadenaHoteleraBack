@@ -4,19 +4,19 @@ from django.core.validators import MinValueValidator
 from django.utils import timezone
 
 class TipoChoices(models.TextChoices):
-    MENSUAL = "Mensual","mensual"
-    ANUAL = "Anual","anual"
-    TRIMESTRAL = "T","Trimestral"
+    MENSUAL = "Mensual", "Mensual"
+    ANUAL = "Anual", "Anual"
+    TRIMESTRAL = "Trimestral", "Trimestral"
 
 class EstadoChoises(models.TextChoices):
-    ACTIVO = "activo","activo"
-    VENCIDO = "vencido","vencido"
-    PAUSADO = "pausado","pausado"
-    CANCELADO = "cancelado","cancelado"
-    PRUEBA = "prueba","prueba"
+    ACTIVO = "activo", "Activo"
+    VENCIDO = "vencido", "Vencido"
+    PAUSADO = "pausado", "Pausado"
+    CANCELADO = "cancelado", "Cancelado"
+    PRUEBA = "prueba", "Prueba"
 
 class Plan(models.Model):
-    nombre = models.CharField(max_length=30, unique=True)
+    nombre = models.CharField(max_length=30)
     max_usuarios = models.IntegerField(default=5)
     max_hoteles = models.IntegerField(default=1)
     precio = models.FloatField()
@@ -24,6 +24,10 @@ class Plan(models.Model):
     activo = models.BooleanField(default=True)
     
     def __str__(self):
+        constraints = [
+            models.UniqueConstraint(fields=['nombre', 'tipo'], name='unique_nombre_tipo')
+        ]
+        ordering = ['nombre', 'tipo']
         return f"{self.nombre} - {self.tipo}"
     
 

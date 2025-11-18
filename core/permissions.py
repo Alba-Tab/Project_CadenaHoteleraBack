@@ -27,7 +27,7 @@ class DentroDeCuota(BasePermission):
     
     def has_permission(self, request, view):
         # Permitir operaciones de lectura siempre
-        if request.method in SAFE_METHODS:
+        if request.method != "POST":
             return True
         
         # Obtener la suscripción del request

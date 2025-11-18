@@ -1,5 +1,5 @@
 from pathlib import Path
-import environ
+import environ 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(DEBUG=(bool, False))
@@ -9,8 +9,7 @@ SECRET_KEY = env.str("SECRET_KEY", default="secretos") #type:ignore
 
 DEBUG = env.bool("DEBUG", default=True) #type:ignore
 
-# ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"]) #type:ignore
-ALLOWED_HOSTS = ["*"] #type:ignore
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS",default=["*"]) #type:ignore
 DATABASES = {
     "default": {
         "ENGINE": "django_tenants.postgresql_backend",
@@ -54,6 +53,9 @@ TENANT_APPS = [
     'apps.pagos',
     'apps.servicios_asociados',
     'apps.configuracion_apariencia',
+    'apps.facial_recognition',
+    "storages",
+    'auditlog',
 ]
 
 
@@ -74,17 +76,21 @@ DEFAULT_FROM_EMAIL = env.str('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)#type
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
-    "django_tenants.middleware.TenantMainMiddleware",
+    "django_tenants.middleware.main.TenantMainMiddleware",
     'apps.suscripciones.middleware.SuscripcionMiddleware',  # 🔹 Middleware de suscripciones
-    'config.middleware.middleware_force_urlconf.ForcetenantUrlconfMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "config.middleware.middleware_user_audit.JWTActorMiddleware", 
+    "auditlog.middleware.AuditlogMiddleware",
+    "config.middleware.middleware_auditlog.TenantAuditLogMiddleware",
+    "config.middleware.middleware_force_urlconf.ForcetenantUrlconfMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+#reorganize los middelewares para que el de JWTActorMiddleware esté antes que AuditlogMiddleware
 
 ROOT_URLCONF = "config.urls_public"
 PUBLIC_SCHEMA_URLCONF = "config.urls_public"
@@ -167,3 +173,33 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# AWS S3 Configuration
+AWS_ACCESS_KEY_ID = env.str("AWS_ACCESS_KEY_ID", default="") #type:ignore
+AWS_SECRET_ACCESS_KEY = env.str("AWS_SECRET_ACCESS_KEY", default="") #type:ignore
+AWS_STORAGE_BUCKET_NAME = env.str("AWS_STORAGE_BUCKET_NAME", default="si2-hoteles") #type:ignore
+AWS_S3_REGION_NAME = env.str("AWS_S3_REGION_NAME", default="us-east-2")  #type:ignore
+
+# S3 Configuration
+AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL = None  # None para buckets con ACLs deshabilitadas (configuración moderna)
+AWS_QUERYSTRING_AUTH = False  # No incluir query strings en las URLs
+AWS_S3_SIGNATURE_VERSION = 's3v4'
+AWS_S3_VERIFY = True  # Verificar certificados SSL
+
+# Storage backends
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+# Media files URL
+MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
+MEDIA_ROOT = '' 
+
+from storages.backends.s3boto3 import S3Boto3Storage
+from django.core.files.storage import default_storage
+
+default_storage._wrapped = S3Boto3Storage() # type: ignore
