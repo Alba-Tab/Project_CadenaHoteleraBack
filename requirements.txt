@@ -39,6 +39,10 @@ sqlparse==0.5.3
 typing_extensions==4.15.0
 tzdata==2025.2
 urllib3==2.5.0
+
+
+
+
 #numpy==2.3.4
 pandas==2.3.3
 scikit-learn==1.7.2
