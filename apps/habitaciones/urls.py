@@ -1,10 +1,12 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from apps.habitaciones.reportes.views import RecomendacionPrecioHabitacionesView
 from .views import HabitacionViewSet
 
 router = DefaultRouter()
 router.register(r'', HabitacionViewSet, basename='habitacion')
 
 urlpatterns = [
-    path('', include(router.urls)),
+     path('', include(router.urls)),
+     path("habitaciones/recomendaciones-precio/", RecomendacionPrecioHabitacionesView.as_view()),
 ]
