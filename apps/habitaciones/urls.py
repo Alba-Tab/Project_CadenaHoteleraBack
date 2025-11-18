@@ -7,6 +7,6 @@ router = DefaultRouter()
 router.register(r'', HabitacionViewSet, basename='habitacion')
 
 urlpatterns = [
-     path("recomendaciones-precio/",RecomendacionPrecioHabitacionesView.as_view(),name="habitaciones-recomendaciones-precio",),
-    path('', include(router.urls)),
+     path('', include(router.urls)),
+     path("habitaciones/recomendaciones-precio/", RecomendacionPrecioHabitacionesView.as_view()),
 ]
