@@ -52,6 +52,7 @@ TENANT_APPS = [
     'apps.checkinout',
     'apps.pagos',
     'apps.servicios_asociados',
+    'apps.configuracion_apariencia',
     'apps.facial_recognition',
     "storages",
     'auditlog',
