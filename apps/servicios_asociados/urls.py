@@ -7,4 +7,5 @@ router.register("", ServiciosAsociadosViewSet, basename="serviciosasociados")
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("reportes/", include('apps.servicios_asociados.reportes.urls')),
 ]
