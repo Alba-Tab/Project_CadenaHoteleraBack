@@ -16,7 +16,7 @@ class HotelViewSet(viewsets.ModelViewSet):
     serializer_class = HotelSerializer
     creando_hoteles = True
     permission_classes = [EscrituraPermitida, DentroDeCuota]
-    
+
     def initial(self, request, *args, **kwargs):
         """
         Agrega contadores de recursos al request para validación de cuotas.
@@ -39,26 +39,26 @@ class HotelViewSet(viewsets.ModelViewSet):
         """
         tenant = self.request.tenant
         suscripcion = self.request.suscripcion
-        
+
         # Validar que existe suscripción activa
         if not suscripcion or not suscripcion.puede_escribir:
             raise PermissionDenied("Suscripción inactiva o vencida.")
-        
+
         # Reservar cupo en el esquema público de forma atómica
         with schema_context("public"):
             uso, _ = UsoTenant.objects.select_for_update().get_or_create(tenant=tenant)
-            
+
             # Validar que no se exceda el límite del plan
             if uso.hoteles >= suscripcion.plan.max_hoteles:
                 raise PermissionDenied(
                     f"Límite de hoteles alcanzado ({suscripcion.plan.max_hoteles}). "
                     f"Actualiza tu plan para crear más hoteles."
                 )
-            
+
             # Incrementar el contador
             uso.hoteles += 1
             uso.save()
-        
+
         # Intentar crear el hotel
         try:
             serializer.save()
@@ -69,17 +69,17 @@ class HotelViewSet(viewsets.ModelViewSet):
                 uso.hoteles = max(0, uso.hoteles - 1)
                 uso.save()
             raise
-    
+
     @transaction.atomic
     def perform_destroy(self, instance):
         """
         Elimina un hotel y decrementa el contador de uso del tenant.
         """
         tenant = self.request.tenant
-        
+
         # Eliminar el hotel
         instance.delete()
-        
+
         # Decrementar el contador en el esquema público
         with schema_context("public"):
             uso = UsoTenant.objects.select_for_update().get(tenant=tenant)

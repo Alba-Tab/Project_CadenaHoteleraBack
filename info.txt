@@ -98,3 +98,7 @@ scikit-learn==1.7.2
 joblib==1.5.2
 
 
+Correr seeder para datos generales: 
+el hotel debe ser el hotel que tiene registrado
+python manage.py seed_planes_suscripcion --schema=hotel_sol
+python manage.py seed_demo_data

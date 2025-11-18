@@ -3,11 +3,25 @@ from django.contrib.auth.models import Group, Permission
 from .models import User
 
 class PermissionSerializer(serializers.ModelSerializer):
+    label = serializers.SerializerMethodField()
     class Meta:
         model = Permission
-        fields = ['id', 'name', 'codename', 'content_type']
+        fields = ['id', 'name', 'codename', 'content_type','label']
 
 
+    def get_label(self, obj):
+        traducciones = {
+            'add_': 'Agregar',
+            'change_': 'Editar',
+            'delete_': 'Eliminar',
+            'view_': 'Ver',
+        }
+        for pref, verbo in traducciones.items():
+            if obj.codename.startswith(pref):
+                modelo = obj.content_type.model.replace('_', ' ').capitalize()
+                return f"{verbo} {modelo}"
+        # Si es un permiso personalizado, usamos su nombre tal cual
+        return obj.name
 
 class RoleSerializer(serializers.ModelSerializer):
     permissions = PermissionSerializer(many=True, read_only=True)

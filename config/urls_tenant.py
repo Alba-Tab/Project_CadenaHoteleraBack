@@ -44,6 +44,7 @@ urlpatterns = [
     path('api/ia/', include('apps.recomendaciones_ia.urls')),
 
     path('api/', include('apps.suscripciones.urls')),  # 🔹 Rutas de suscripciones
+    path('api/configuracion-apariencia/', include('apps.configuracion_apariencia.urls')),
     path('api/', include('apps.facial_recognition.urls')),  # 🔹 Reconocimiento facial
     #añadi ests 2 para probar login si estorba, solo borrenlas
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -53,5 +54,4 @@ urlpatterns = [
     path('api/', include('core.urls')),#ebcargado de la auditoria
 
 ]
-
 

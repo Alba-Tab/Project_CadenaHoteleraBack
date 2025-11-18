@@ -7,6 +7,7 @@ class HabitacionRecomendacionSerializer(serializers.Serializer):
     hotel_nombre = serializers.CharField()
     numero = serializers.CharField()
     tipo = serializers.CharField()
+    precio_actual = serializers.DecimalField(max_digits=10, decimal_places=2)
     precio_noche = serializers.DecimalField(max_digits=10, decimal_places=2)
     reservas_totales = serializers.IntegerField()
     noches_reservadas = serializers.IntegerField()
