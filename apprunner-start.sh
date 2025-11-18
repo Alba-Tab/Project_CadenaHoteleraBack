@@ -9,4 +9,4 @@ python3 manage.py migrate_schemas --tenant
 #python3 manage.py collectstatic --noinput
 
 # Arrancar Gunicorn
-gunicorn --bind 0.0.0.0:${PORT:-8000} config.wsgi:application
+python3 -m gunicorn --bind 0.0.0.0:${PORT:-8000} config.wsgi:application
