@@ -34,6 +34,7 @@ SHARED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',  # ✨ NUEVO
     'corsheaders',
+    'apps.backups',  # MOVIDO A SHARED (debe estar en schema public) aqui registra todos los tenant
     'apps.suscripciones',
 ]
 TENANT_APPS = [
@@ -172,6 +173,10 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
+
+# Media files (archivos subidos)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
