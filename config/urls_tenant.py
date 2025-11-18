@@ -11,6 +11,7 @@ urlpatterns = [
     #ruta reportes para usuarios (No mover el orden de estos 2!)
     path('api/usuarios/reportes/', include('apps.usuarios.reportes.urls')),
     path('api/', include("apps.usuarios.urls")),
+    #path('api/hoteles/', include('apps.hoteles.urls')),
 
     #ruta reportes para habitaciones (No mover el orden de estos 2!)
     path('api/habitaciones/reportes/', include('apps.habitaciones.reportes.urls')),
@@ -39,8 +40,11 @@ urlpatterns = [
     path('api/folioestancias/', include('apps.folioestancias.urls')),
     path('api/fidelizacion/', include('apps.fidelizacion.urls')),
     path('api/checkinout/', include('apps.checkinout.urls')),
+    path('api/', include('apps.pagos.urls')),
+    path('api/backups/', include('apps.backups.urls')),  # ✅ Más específico
 
-    
+    # Machine Learning - Recomendaciones de precios
+    path('api/ia/', include('apps.recomendaciones_ia.urls')),
 
     path('api/', include('apps.suscripciones.urls')),  # 🔹 Rutas de suscripciones
     path('api/configuracion-apariencia/', include('apps.configuracion_apariencia.urls')),
@@ -50,6 +54,10 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     #
     path('admin/', admin.site.urls),
+    
+    # path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    # path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+]
     path('api/', include('core.urls')),#ebcargado de la auditoria
 
 ]
