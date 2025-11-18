@@ -40,7 +40,8 @@ urlpatterns = [
     path('api/fidelizacion/', include('apps.fidelizacion.urls')),
     path('api/checkinout/', include('apps.checkinout.urls')),
 
-    
+    # Machine Learning - Recomendaciones de precios
+    path('api/ia/', include('apps.recomendaciones_ia.urls')),
 
     path('api/', include('apps.suscripciones.urls')),  # 🔹 Rutas de suscripciones
     path('api/configuracion-apariencia/', include('apps.configuracion_apariencia.urls')),

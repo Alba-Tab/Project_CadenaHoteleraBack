@@ -54,6 +54,7 @@ TENANT_APPS = [
     'apps.servicios_asociados',
     'apps.configuracion_apariencia',
     'apps.facial_recognition',
+    'apps.recomendaciones_ia',  # ML para recomendaciones de precios
     "storages",
     'auditlog',
 ]
