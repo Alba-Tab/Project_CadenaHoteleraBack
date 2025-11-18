@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from django.contrib.auth import authenticate
@@ -9,6 +10,7 @@ from django.contrib.auth.models import Group, Permission
 from django.utils import timezone
 from .models import User
 from .serializers import UserSerializer, RoleSerializer, PermissionSerializer
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 class PermissionViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -16,8 +18,30 @@ class PermissionViewSet(viewsets.ReadOnlyModelViewSet):
     Solo lectura - no se pueden crear/editar permisos desde aquí
     """
     permission_classes = [IsAuthenticated]  # ✨ CAMBIADO
-    queryset = Permission.objects.all().order_by('name')
+    # queryset = Permission.objects.all().order_by('name')
     serializer_class = PermissionSerializer
+
+    def get_queryset(self):
+        """
+        Filtrar solo permisos de las apps del hotel y gestión de usuarios
+        """
+        # Apps relevantes para tu sistema hotelero
+        relevant_apps = [
+            'usuarios',      # Gestión de usuarios
+            'hoteles',       # Hoteles
+            'habitaciones',  # Habitaciones
+            'reservas',      # Reservas
+            'servicios',     # Servicios
+            'pagos',         # Pagos
+            'fidelizacion',  # Fidelización
+            'checkinout',    # Check-in/out
+            'folioestancias', # Folios
+            'auth',          # Roles y permisos (Group/Permission)
+        ]
+
+        return Permission.objects.filter(
+            content_type__app_label__in=relevant_apps
+        ).order_by('content_type__app_label', 'name')
 
 class RoleViewSet(viewsets.ModelViewSet):
     """
@@ -45,7 +69,7 @@ class UserViewSet(viewsets.ModelViewSet):
     """
     queryset = User.objects.all().order_by('username')
     serializer_class = UserSerializer
-
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     def get_permissions(self):
         """
         Permisos diferentes según la acción
@@ -178,6 +202,7 @@ class UserViewSet(viewsets.ModelViewSet):
             'user': serializer.data,
             'permissions': permissions,
             'roles': roles,
+            'photo_url': user.photo.url if user.photo else None,
             'is_admin': user.is_superuser,
             'last_login': user.last_login,
             'total_permissions': len(permissions)

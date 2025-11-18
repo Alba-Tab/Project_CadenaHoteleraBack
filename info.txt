@@ -46,7 +46,7 @@ python manage.py tenant_command seed_servicios --schema=hotel_tajibo
 aplicamos las migraciones publicas 
 python manage.py migrate_schemas --schema=public
 
-
+---------------------------------------------------------------------------------------------
 
 
 dominio servicios 
@@ -83,6 +83,8 @@ python manage.py tenant_command seed_pagos --schema=hotel_tajibo
 
 
 ////////////////////////////////////////////////////////////////////////////
+---------------------------------------------------------------------------
+
 para subircambios a la rama local y remota 
 
 git branch
@@ -114,6 +116,7 @@ git commit -m (nombre para el commit )
 
 
 /////////////////////////////////////////////////////////////////////////////////
+-----------------------------------------------------------------------------
 
 al crear una tabla de una base de datos para agregar 
 
@@ -172,9 +175,7 @@ psql -U postgres -d nombre_db < ruta_del_backup.sql
 
 
 
-===========================================
 SISTEMA DE BACKUPS
-===========================================
 
 # CREAR MIGRACIONES (IMPORTANTE - HACER PRIMERO)
 python manage.py makemigrations backups
@@ -241,3 +242,16 @@ GET    http://localhost:8000/api/backups/configuracion/    # Ver configuración
 # UBICACIÓN DE LOS BACKUPS
 media/backups/full/      # Backups completos
 media/backups/tenant/    # Backups por tenant
+------------------------------------------------------------------------
+
+instalando estas librerias para el maching learnig version python 13
+numpy==2.3.4
+pandas==2.3.3
+scikit-learn==1.7.2
+joblib==1.5.2
+
+
+Correr seeder para datos generales: 
+el hotel debe ser el hotel que tiene registrado
+python manage.py seed_planes_suscripcion --schema=hotel_sol
+python manage.py seed_demo_data
