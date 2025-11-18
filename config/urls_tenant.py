@@ -18,6 +18,7 @@ urlpatterns = [
     path('api/checkinout/', include('apps.checkinout.urls')),
     path('api/', include('apps.pagos.urls')),
     path('api/', include('apps.suscripciones.urls')),  # 🔹 Rutas de suscripciones
+    path('api/configuracion-apariencia/', include('apps.configuracion_apariencia.urls')),
     #añadi ests 2 para probar login si estorba, solo borrenlas
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

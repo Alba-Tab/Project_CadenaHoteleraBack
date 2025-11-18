@@ -16,8 +16,30 @@ class PermissionViewSet(viewsets.ReadOnlyModelViewSet):
     Solo lectura - no se pueden crear/editar permisos desde aquí
     """
     permission_classes = [IsAuthenticated]  # ✨ CAMBIADO
-    queryset = Permission.objects.all().order_by('name')
+    # queryset = Permission.objects.all().order_by('name')
     serializer_class = PermissionSerializer
+
+    def get_queryset(self):
+        """
+        Filtrar solo permisos de las apps del hotel y gestión de usuarios
+        """
+        # Apps relevantes para tu sistema hotelero
+        relevant_apps = [
+            'usuarios',      # Gestión de usuarios
+            'hoteles',       # Hoteles
+            'habitaciones',  # Habitaciones
+            'reservas',      # Reservas
+            'servicios',     # Servicios
+            'pagos',         # Pagos
+            'fidelizacion',  # Fidelización
+            'checkinout',    # Check-in/out
+            'folioestancias', # Folios
+            'auth',          # Roles y permisos (Group/Permission)
+        ]
+
+        return Permission.objects.filter(
+            content_type__app_label__in=relevant_apps
+        ).order_by('content_type__app_label', 'name')
 
 class RoleViewSet(viewsets.ModelViewSet):
     """
