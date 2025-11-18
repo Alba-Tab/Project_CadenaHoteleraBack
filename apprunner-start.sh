@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+echo "=== DIAGNÓSTICO DE PAQUETES INSTALADOS ==="
+pip list
+echo "=== FIN DIAGNÓSTICO ==="
 # Migraciones para django-tenants
 python3 manage.py migrate_schemas --shared
 python3 manage.py migrate_schemas --tenant
