@@ -93,6 +93,7 @@ def obtener_recomendaciones_habitaciones(
                 "hotel_nombre": row["hotel__nombre"],
                 "numero": row["habitacion__numero"],
                 "tipo": row["habitacion__tipo"],
+                "precio_actual": row["habitacion__precio_noche"],
                 "precio_noche": row["habitacion__precio_noche"],
                 "reservas_totales": row["total_reservas"],
                 "noches_reservadas": noches_reservadas,
