@@ -19,7 +19,7 @@ python3 create_public_tenant.py || echo "Warning: No se pudo crear tenant públi
 
 # Arrancar Gunicorn
 echo "=== INICIANDO SERVIDOR ==="
-exec gunicorn \
+exec python3 -m gunicorn \
     --bind 0.0.0.0:${PORT:-8000} \
     --workers 2 \
     --threads 4 \
