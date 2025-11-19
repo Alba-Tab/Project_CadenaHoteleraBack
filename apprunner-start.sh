@@ -1,7 +1,11 @@
 #!/bin/bash
 set -e
 
-export PYTHONPATH=$PYTHONPATH:$(pwd)
+echo "=== DIAGNÓSTICO ==="
+echo "Directorio actual:"
+pwd
+echo "Listando carpetas clave (deberíamos ver 'django' aquí):"
+ls -d django || echo "OJO: No veo la carpeta django"
 
 echo "=== EJECUTANDO MIGRACIONES ==="
 python3 manage.py migrate_schemas --shared

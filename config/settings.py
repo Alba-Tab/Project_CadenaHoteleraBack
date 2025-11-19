@@ -115,20 +115,7 @@ TENANT_SUBFOLDER_PREFIX = env.bool("TENANT_SUBFOLDER_PREFIX", default=False) #ty
 
 AUTH_USER_MODEL = "usuarios.User"
 
-# Configuración de CORS
-if DEBUG:
-    CORS_ALLOW_ALL_ORIGINS = True
-else:
-    # En producción, especifica tus dominios permitidos
-    CORS_ALLOWED_ORIGINS = env.list(
-        "CORS_ALLOWED_ORIGINS",
-        default=[
-            "https://tudominio.com",  # Reemplaza con tu dominio real
-            "https://*.tudominio.com",
-        ]
-    ) #type:ignore
-    CORS_ALLOW_ALL_ORIGINS = False
-
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     'accept',
