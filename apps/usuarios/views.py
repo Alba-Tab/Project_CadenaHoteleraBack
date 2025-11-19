@@ -128,6 +128,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 'user': serializer.data,
                 'permissions': permissions,
                 'roles': roles,
+                'hotel_id': user.hotel.id if user.hotel else None,
                 'message': '¡Login exitoso!'
             })
 
@@ -357,6 +358,7 @@ class UserViewSet(viewsets.ModelViewSet):
             'user': serializer.data,
             'permissions': permissions,
             'roles': roles,
+            'hotel_id': user.hotel.id if user.hotel else None,
             'photo_url': user.photo.url if user.photo else None,
             'is_admin': user.is_superuser,
             'last_login': user.last_login,
@@ -371,14 +373,14 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         from apps.reservas.models import Reserva
         from apps.reservas.serializers import ReservaSerializer
-        
+
         user = request.user
-        
+
         # Obtener todas las reservas del usuario, ordenadas por más reciente
         reservas = Reserva.objects.filter(huesped=user).order_by('-fecha_reserva')
-        
+
         serializer = ReservaSerializer(reservas, many=True)
-        
+
         return Response({
             'usuario': {
                 'id': user.id,
