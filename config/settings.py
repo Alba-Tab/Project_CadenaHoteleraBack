@@ -107,41 +107,10 @@ CORS_ALLOW_CREDENTIALS = True
 #-------------------------------------------------------------------------------------------------------------------
 
 #-----------------------Arreglos de cors para la nube---------------------------------------
-
-
-# Cabeceras permitidas
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-    'cache-control',
-    'pragma',
-]
-
-# Métodos HTTP permitidos
-CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
-]
-
-# Cabeceras expuestas al cliente
-CORS_EXPOSE_HEADERS = [
-    'Content-Type',
-    'X-CSRFToken',
-]
-
-# Permitir preflight requests
-CORS_PREFLIGHT_MAX_AGE = 86400  # 24 horas
+CORS_ALLOW_HEADERS = ['*']  # Permitir todas las cabeceras
+CORS_ALLOW_METHODS = ['*']  # Permitir todos los métodos HTTP
+CORS_EXPOSE_HEADERS = ['*']  # Exponer todas las cabeceras al cliente
+CORS_PREFLIGHT_MAX_AGE = 86400  # Cache de preflight por 24 horas
 #-------------------------------------------------------------------------------------------------------------------
 # ✨ CONFIGURACIÓN DE JWT
 from datetime import timedelta
@@ -187,6 +156,34 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+
+# ============================================================================
+# CONFIGURACIÓN DE SEGURIDAD CSRF PARA CORS
+# ============================================================================
+# Orígenes confiables para CSRF
+CSRF_TRUSTED_ORIGINS = [    
+    'https://albadev.me',
+    'http://albadev.me',
+    'https://*.albadev.me',  # Todos los subdominios de albadev.me
+    'http://*.albadev.me',
+    'http://hoteles-front.s3-website.us-east-2.amazonaws.com',
+    'https://jgyqzmxg7p.us-east-2.awsapprunner.com',
+    'http://localhost:4200',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
+# Permitir cookies cross-domain
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = False  # Cambiar a True en producción con HTTPS
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SECURE = False  # Cambiar a True en producción con HTTPS
+
+
+
+# ============================================================================
+# CONFIGURACIÓN DE SEGURIDAD CSRF PARA CORS
+# ============================================================================
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
