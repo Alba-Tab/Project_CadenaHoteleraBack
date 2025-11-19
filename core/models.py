@@ -5,7 +5,8 @@ class Tenant(TenantMixin):
     name = models.CharField(max_length=100)
     paid_until = models.DateField(null=True, blank=True)
     on_trial = models.BooleanField(default=True)
-    auto_create_schema = True  # crea el schema automáticamente
+    auto_create_schema = False  # No crear schema automáticamente - se hará en background
+    auto_drop_schema = True  # elimina el schema automáticamente al borrar
 
 class Domain(DomainMixin):
     pass

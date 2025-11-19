@@ -1,5 +1,5 @@
 from typing import Dict, Any
-from django.db import transaction
+from django.db import transaction, connection
 from django.contrib.auth import get_user_model
 from django_tenants.utils import schema_context
 from core.models import Tenant, Domain
@@ -8,74 +8,84 @@ from config.settings import DEFAULT_FROM_EMAIL
 from datetime import timedelta
 from django.utils import timezone
 from apps.suscripciones.models import Suscripcion, UsoTenant
+import threading
+import logging
+import time
+
+logger = logging.getLogger(__name__)
+
 class TenantFormService:
     @staticmethod
-    @transaction.atomic
-    def create_tenant_with_domain(validated: Dict[str, Any]) -> Dict[str, Any]:
+    def _process_tenant_background(tenant_id: int, validated: Dict[str, Any]):
         """
-        Crea Tenant Domain esquema datos base y usuario admin del hotel.
-        Incluye creación de suscripción inicial basada en el plan seleccionado.
-        si falla algo, rollback automático.
+        Procesa las migraciones y configuración del tenant en segundo plano.
+        Este método se ejecuta en un thread separado.
         """
-        nombre = validated["first_name"]
-        apellido = validated["last_name"]
-        email = validated["email"]
-        nombre_empresa = validated["nombre_empresa"]
-        username = validated["username"]
-        password = validated["password"]
-        schema_name = validated["schema_name"]
-        full_domain = validated["domain"]
-        plan = validated["plan"]
-
-        if Domain.objects.filter(domain=full_domain).exists():
-            raise ValueError("Dominio ya existente.")
-
-        tenant = Tenant(schema_name=schema_name, name=nombre_empresa)
-        tenant.save()
-        print("TENANT CREADO")
-        Domain.objects.create(domain=full_domain, tenant=tenant, is_primary=True)
-        print("DOMINIO CREADO")
-        
-        # Calcular fechas de suscripción según el tipo de plan
-        inicio_periodo = timezone.now().date()
-        if plan.tipo == "Mensual":
-            fin_periodo = inicio_periodo + timedelta(days=30)
-        elif plan.tipo == "Anual":
-            fin_periodo = inicio_periodo + timedelta(days=365)
-        elif plan.tipo == "Trimestral":  # Trimestral
-            fin_periodo = inicio_periodo + timedelta(days=90)
-        else:
-            fin_periodo = inicio_periodo + timedelta(days=30)  # Default mensual
-        
-        # Crear suscripción en esquema público
-        suscripcion = Suscripcion.objects.create(
-            tenant=tenant,
-            plan=plan,
-            estado="activo",
-            inicio_periodo=inicio_periodo,
-            fin_periodo=fin_periodo
-        )
-        print(f"SUSCRIPCIÓN CREADA: {plan.nombre}")
-        
-        # Crear registro de uso del tenant
-        UsoTenant.objects.create(tenant=tenant)
-        print("REGISTRO DE USO CREADO")
-        
-        # Crear usuario admin en el esquema del tenant
-        User = get_user_model()
-        with schema_context(tenant.schema_name):
-            User.objects.create_user(
-                username=username,
-                email=email,
-                password=password,
-                first_name=nombre,
-                last_name=apellido,
-                is_staff=True,
-            )
-        
-        # Enviar correo de confirmación con detalles del plan
-        subject = "¡Bienvenido! Tu cuenta ha sido creada exitosamente"
-        message = f"""
+        try:
+            start_time = time.time()
+            logger.info("=" * 60)
+            logger.info("🔄 PROCESAMIENTO EN BACKGROUND INICIADO")
+            logger.info("=" * 60)
+            
+            # Obtener el tenant creado
+            tenant = Tenant.objects.get(id=tenant_id)
+            schema_name = tenant.schema_name
+            nombre = validated["first_name"]
+            apellido = validated["last_name"]
+            email = validated["email"]
+            username = validated["username"]
+            password = validated["password"]
+            full_domain = validated["domain"]
+            plan = validated["plan"]
+            nombre_empresa = validated["nombre_empresa"]
+            
+            # 1. Crear el schema manualmente y ejecutar migraciones
+            step_start = time.time()
+            logger.info(f"🔵 Creando schema y ejecutando migraciones para '{schema_name}'...")
+            
+            from django.core.management import call_command
+            from django.db import connection
+            
+            # Crear el schema manualmente
+            with connection.cursor() as cursor:
+                cursor.execute(f'CREATE SCHEMA IF NOT EXISTS "{schema_name}"')
+            
+            # Ejecutar migraciones en el nuevo schema
+            call_command('migrate_schemas', '--schema', schema_name, verbosity=0)
+            
+            migration_time = time.time() - step_start
+            logger.info(f"✅ Schema y migraciones completados: {migration_time:.2f}s")
+            
+            # 2. Crear usuario admin en el esquema del tenant
+            step_start = time.time()
+            logger.info(f"🔵 Creando usuario administrador...")
+            User = get_user_model()
+            with schema_context(schema_name):
+                User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=password,
+                    first_name=nombre,
+                    last_name=apellido,
+                    is_staff=True,
+                )
+            user_time = time.time() - step_start
+            logger.info(f"✅ Usuario admin creado: {user_time:.2f}s")
+            
+            # 3. Calcular fechas de suscripción
+            inicio_periodo = timezone.now().date()
+            if plan.tipo == "Mensual":
+                fin_periodo = inicio_periodo + timedelta(days=30)
+            elif plan.tipo == "Anual":
+                fin_periodo = inicio_periodo + timedelta(days=365)
+            elif plan.tipo == "Trimestral":
+                fin_periodo = inicio_periodo + timedelta(days=90)
+            else:
+                fin_periodo = inicio_periodo + timedelta(days=30)
+            
+            # 4. Enviar email de bienvenida
+            subject = "¡Bienvenido! Tu cuenta ha sido creada exitosamente"
+            message = f"""
         Hola {nombre} {apellido},
 
         ¡Bienvenido a {nombre_empresa}!
@@ -114,9 +124,104 @@ class TenantFormService:
         Saludos,
         Equipo de Soporte
         """
-        print("ENVIANDO EMAIL")
-        send_mail(subject, message, DEFAULT_FROM_EMAIL, [email]) #type:ignore
-        print("EMAIL ENVIADO")
+            
+            try:
+                logger.info("📧 Enviando email de bienvenida...")
+                send_mail(
+                    subject, 
+                    message, 
+                    DEFAULT_FROM_EMAIL, 
+                    [email],
+                    fail_silently=False
+                )
+                logger.info(f"✅ Email enviado a {email}")
+            except Exception as e:
+                logger.error(f"❌ Error al enviar email: {str(e)}")
+            
+            # Resumen final
+            total_time = time.time() - start_time
+            logger.info("=" * 60)
+            logger.info("✅ PROCESAMIENTO EN BACKGROUND COMPLETADO")
+            logger.info(f"⏱️  TIEMPO TOTAL BACKGROUND: {total_time:.2f}s ({total_time/60:.2f} min)")
+            logger.info("=" * 60)
+            
+        except Exception as e:
+            logger.error(f"❌ Error en procesamiento background: {str(e)}", exc_info=True)
+    
+    @staticmethod
+    @transaction.atomic
+    def create_tenant_with_domain(validated: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Crea Tenant y Domain rápidamente, devuelve respuesta inmediata.
+        Las migraciones y configuración se procesan en segundo plano.
+        """
+        start_time = time.time()
+        logger.info("🚀 CREACIÓN RÁPIDA DE TENANT (sin migraciones)")
+        
+        nombre = validated["first_name"]
+        apellido = validated["last_name"]
+        email = validated["email"]
+        nombre_empresa = validated["nombre_empresa"]
+        username = validated["username"]
+        schema_name = validated["schema_name"]
+        full_domain = validated["domain"]
+        plan = validated["plan"]
+
+        if Domain.objects.filter(domain=full_domain).exists():
+            raise ValueError("Dominio ya existente.")
+
+        # 1. Crear tenant SIN schema (rápido - sin migraciones)
+        logger.info(f"🔵 Creando registro de tenant '{schema_name}'...")
+        tenant = Tenant(schema_name=schema_name, name=nombre_empresa)
+        tenant.save()  # Rápido porque auto_create_schema=False
+        logger.info(f"✅ Tenant creado (sin schema aún)")
+        
+        # 2. Crear dominio
+        Domain.objects.create(domain=full_domain, tenant=tenant, is_primary=True)
+        logger.info(f"✅ Dominio creado: {full_domain}")
+        
+        # 3. Calcular fechas de suscripción según el tipo de plan
+        inicio_periodo = timezone.now().date()
+        if plan.tipo == "Mensual":
+            fin_periodo = inicio_periodo + timedelta(days=30)
+        elif plan.tipo == "Anual":
+            fin_periodo = inicio_periodo + timedelta(days=365)
+        elif plan.tipo == "Trimestral":
+            fin_periodo = inicio_periodo + timedelta(days=90)
+        else:
+            fin_periodo = inicio_periodo + timedelta(days=30)
+        
+        # 4. Crear suscripción en esquema público
+        suscripcion = Suscripcion.objects.create(
+            tenant=tenant,
+            plan=plan,
+            estado="activo",
+            inicio_periodo=inicio_periodo,
+            fin_periodo=fin_periodo
+        )
+        logger.info(f"✅ Suscripción creada: {plan.nombre}")
+        
+        # 5. Crear registro de uso del tenant
+        UsoTenant.objects.create(tenant=tenant)
+        logger.info("✅ Registro de uso creado")
+        
+        # 6. Iniciar procesamiento en segundo plano (migraciones + usuario + email)
+        background_thread = threading.Thread(
+            target=TenantFormService._process_tenant_background,
+            args=(tenant.id, validated),
+            daemon=True
+        )
+        background_thread.start()
+        logger.info("🔄 Procesamiento en background iniciado (migraciones, usuario, email)")
+        
+        # Calcular tiempo de respuesta rápida
+        response_time = time.time() - start_time
+        logger.info("=" * 60)
+        logger.info("✅ RESPUESTA RÁPIDA GENERADA")
+        logger.info(f"⏱️  Tiempo de respuesta: {response_time:.2f}s")
+        logger.info("🔄 Migraciones y configuración finalizarán en ~1-2 minutos")
+        logger.info("📧 Recibirás un email cuando todo esté listo")
+        logger.info("=" * 60)
 
         return {
             "tenant_id": tenant.id, #type:ignore
@@ -124,16 +229,24 @@ class TenantFormService:
             "domain": full_domain,
             "admin_username": username,
             "admin_email": email,
-            "message":message,
+            "status": "processing",
+            "message": f"¡Empresa '{nombre_empresa}' creada exitosamente! La configuración se completará en 1-2 minutos. Recibirás un email de confirmación cuando todo esté listo.",
+            "tiempo_respuesta_segundos": round(response_time, 2),
+            "procesamiento_background": True,
             "suscripcion": {
                 "plan_nombre": plan.nombre,
                 "plan_tipo": plan.get_tipo_display(),
-                "precio": plan.precio,
+                "precio": str(plan.precio),
                 "inicio_periodo": inicio_periodo.isoformat(),
                 "fin_periodo": fin_periodo.isoformat(),
                 "estado": "activo",
                 "max_hoteles": plan.max_hoteles,
                 "max_usuarios": plan.max_usuarios,
+            },
+            "acceso": {
+                "url": f"http://{full_domain}/authentication/login",
+                "usuario": username,
+                "nota": "Podrás acceder en 1-2 minutos cuando la configuración finalice"
             }
         }
 
