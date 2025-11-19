@@ -27,8 +27,8 @@ class Command(BaseCommand):
         # ==========================================================
         # USAR SCHEMA DEL TENANT
         # ==========================================================
-        connection.set_schema("hotel_sol", True)
-        self.stdout.write(self.style.WARNING("Usando schema: hotel_sol"))
+        connection.set_schema("noelhotel", True)
+        self.stdout.write(self.style.WARNING("Usando schema: noelhotel"))
 
         # ==========================================================
         # 1. USUARIOS
