@@ -104,6 +104,45 @@ AUTH_USER_MODEL = "usuarios.User"
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
+#-------------------------------------------------------------------------------------------------------------------
+
+#-----------------------Arreglos de cors para la nube---------------------------------------
+
+
+# Cabeceras permitidas
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'cache-control',
+    'pragma',
+]
+
+# Métodos HTTP permitidos
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+# Cabeceras expuestas al cliente
+CORS_EXPOSE_HEADERS = [
+    'Content-Type',
+    'X-CSRFToken',
+]
+
+# Permitir preflight requests
+CORS_PREFLIGHT_MAX_AGE = 86400  # 24 horas
+#-------------------------------------------------------------------------------------------------------------------
 # ✨ CONFIGURACIÓN DE JWT
 from datetime import timedelta
 
