@@ -9,15 +9,7 @@ SECRET_KEY = env.str("SECRET_KEY", default="secretos") #type:ignore
 
 DEBUG = env.bool("DEBUG", default=True) #type:ignore
 
-# Hosts permitidos - incluye App Runner, CloudFront y dominios personalizados
-ALLOWED_HOSTS = env.list(
-    "ALLOWED_HOSTS",
-    default=[
-        "*",  # Para desarrollo
-        ".awsapprunner.com",  # App Runner
-        ".cloudfront.net",  # CloudFront
-    ]
-) #type:ignore
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS",default=["*"]) #type:ignore
 DATABASES = {
     "default": {
         "ENGINE": "django_tenants.postgresql_backend",
@@ -199,10 +191,6 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
-
-# Media files (archivos subidos)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

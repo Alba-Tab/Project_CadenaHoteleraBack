@@ -16,9 +16,3 @@ python3 init_app.py
 
 echo "=== INICIANDO SERVIDOR ==="
 python3 -m gunicorn --bind 0.0.0.0:${PORT:-8000} config.wsgi:application
-    --threads 4 \
-    --timeout 120 \
-    --access-logfile - \
-    --error-logfile - \
-    --log-level info \
-    config.wsgi:application
