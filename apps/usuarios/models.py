@@ -4,6 +4,14 @@ from django.db import models
 class User(AbstractUser):
     email = models.EmailField(unique=True)
     photo = models.ImageField(upload_to='photos/', null=True, blank=True)
+    hotel = models.ForeignKey(
+        'hoteles.Hotel',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='usuarios',
+        help_text="Hotel al que pertenece el usuario"
+    )
     fcm_token = models.CharField(
         max_length=255,
         null=True,
