@@ -42,6 +42,32 @@ class HabitacionViewSet(viewsets.ModelViewSet):
     @action(
         detail=False,
         methods=['get'],
+        url_path='por-hotel',
+        serializer_class=HabitacionSerializer
+    )
+    def por_hotel(self, request):
+        """
+        Obtiene todas las habitaciones de un hotel específico.
+        Parámetro: hotel_id
+        """
+        hotel_id = request.query_params.get('hotel_id', None)
+
+        if not hotel_id:
+            return Response(
+                {"error": "Debe proporcionar el parámetro 'hotel_id'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Filtrar habitaciones por hotel
+        habitaciones = Habitacion.objects.filter(hotel_id=hotel_id)
+
+        # Serializar y retornar
+        serializer = self.get_serializer(habitaciones, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(
+        detail=False,
+        methods=['get'],
         url_path='ranking-demanda',
         serializer_class=HabitacionRankingSerializer,
         permission_classes = [IsAuthenticated]

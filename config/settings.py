@@ -1,5 +1,5 @@
 from pathlib import Path
-import environ 
+import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(DEBUG=(bool, False))
@@ -85,7 +85,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "config.middleware.middleware_user_audit.JWTActorMiddleware", 
+    "config.middleware.middleware_user_audit.JWTActorMiddleware",
     "auditlog.middleware.AuditlogMiddleware",
     "config.middleware.middleware_auditlog.TenantAuditLogMiddleware",
     "config.middleware.middleware_force_urlconf.ForcetenantUrlconfMiddleware",
@@ -203,9 +203,13 @@ STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 # Media files URL
 MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
-MEDIA_ROOT = '' 
+MEDIA_ROOT = ''
 
 from storages.backends.s3boto3 import S3Boto3Storage
 from django.core.files.storage import default_storage
 
 default_storage._wrapped = S3Boto3Storage() # type: ignore
+
+# Firebase Configuration
+import os
+FIREBASE_CREDENTIAL_PATH = os.path.join(BASE_DIR, 'firebase', 'project-hotel-af807-firebase-adminsdk-fbsvc-5fca853de0.json')

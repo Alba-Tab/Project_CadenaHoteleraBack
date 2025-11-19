@@ -4,6 +4,7 @@ from rest_framework.exceptions import ValidationError
 from apps.folioestancias.models import FolioEstancia
 from apps.habitaciones.models import Habitacion
 from apps.reservas.models import Reserva
+from core.notifications_service import NotificationService
 
 
 # Función para procesar una nueva reserva
@@ -33,6 +34,21 @@ def procesar_reserva(data):
     # Actualizamos el estado de la habitación a 'reservada'
     habitacion.estado = Habitacion.RESERVADA
     habitacion.save()
+
+    # 🔔 Enviar notificación push al huésped si tiene token FCM
+    huesped = reserva.huesped
+    if huesped and huesped.fcm_token:
+        try:
+            NotificationService.send_reserva_notification(
+                usuario=huesped,
+                reserva_id=reserva.id,
+                mensaje=f"Tu reserva en {reserva.hotel.nombre} del {fecha_entrada} al {fecha_salida} ha sido confirmada",
+                notification_type='confirmacion'
+            )
+            print(f"✅ Notificación enviada al huésped {huesped.username}")
+        except Exception as e:
+            # No romper la transacción si falla la notificación
+            print(f"⚠️ Error enviando notificación: {str(e)}")
 
     return reserva
 
