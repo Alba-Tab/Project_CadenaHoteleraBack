@@ -9,7 +9,15 @@ SECRET_KEY = env.str("SECRET_KEY", default="secretos") #type:ignore
 
 DEBUG = env.bool("DEBUG", default=True) #type:ignore
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS",default=["*"]) #type:ignore
+# Hosts permitidos - incluye App Runner, CloudFront y dominios personalizados
+ALLOWED_HOSTS = env.list(
+    "ALLOWED_HOSTS",
+    default=[
+        "*",  # Para desarrollo
+        ".awsapprunner.com",  # App Runner
+        ".cloudfront.net",  # CloudFront
+    ]
+) #type:ignore
 DATABASES = {
     "default": {
         "ENGINE": "django_tenants.postgresql_backend",
@@ -76,6 +84,7 @@ DEFAULT_FROM_EMAIL = env.str('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)#type
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
+    "config.middleware.middleware_tenant_header.TenantHeaderMiddleware",  # 🔹 NUEVO: Extrae tenant del header ANTES de TenantMainMiddleware
     "django_tenants.middleware.main.TenantMainMiddleware",
     'apps.suscripciones.middleware.SuscripcionMiddleware',  # 🔹 Middleware de suscripciones
     "django.middleware.security.SecurityMiddleware",
@@ -95,12 +104,42 @@ MIDDLEWARE = [
 ROOT_URLCONF = "config.urls_public"
 PUBLIC_SCHEMA_URLCONF = "config.urls_public"
 TENANT_URLCONF = "config.urls_tenant"
+
+# Dominio base para tenants - debe configurarse en producción
 TENANT_BASE_DOMAIN = env.str("TENANT_BASE_DOMAIN", default="localhost") #type:ignore
+
+# Usar header para identificar tenant en lugar del dominio (para CloudFront/App Runner)
+TENANT_SUBFOLDER_PREFIX = env.bool("TENANT_SUBFOLDER_PREFIX", default=False) #type:ignore
 
 AUTH_USER_MODEL = "usuarios.User"
 
-CORS_ALLOW_ALL_ORIGINS = True
+# Configuración de CORS
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    # En producción, especifica tus dominios permitidos
+    CORS_ALLOWED_ORIGINS = env.list(
+        "CORS_ALLOWED_ORIGINS",
+        default=[
+            "https://tudominio.com",  # Reemplaza con tu dominio real
+            "https://*.tudominio.com",
+        ]
+    ) #type:ignore
+    CORS_ALLOW_ALL_ORIGINS = False
+
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'x-tenant-domain',  # Header personalizado para identificar el tenant
+]
 
 # ✨ CONFIGURACIÓN DE JWT
 from datetime import timedelta

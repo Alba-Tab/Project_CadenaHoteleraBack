@@ -1,0 +1,15 @@
+version: 1.0
+runtime: python3
+build:
+  commands:
+    pre-build:
+      - pip install -r requirements.txt
+
+run:
+  runtime-version: 3.11
+  command: sh apprunner-start.sh
+  network:
+    port: 8000
+  env:
+    - name: PORT
+      value: "8000"
