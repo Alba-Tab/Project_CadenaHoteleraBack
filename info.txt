@@ -1,16 +1,41 @@
 ejecurta el archivon para crear el eaquema publico
 python create_public_tenant.py
 
-este crea el tenant tajibo (si ya esta creado el esquema tajibo es necesario borrar el equemo de la base de datos para
-que se pueda volver a crear)
+//////este crea el tenant tajibo (si ya esta creado el esquema tajibo es necesario borrar
+//////el esquema de la base de datos para que se pueda volver a crear)
+
 python create_tenant_tajibo.py
 
+/////////// como crear un tenant con comando 
 
-como crear un tenant con comando 
 python config/create_tenant_tajibo.py
 
-verificar si el tenant esta resgistrado
+/////////// verificar si el tenant esta resgistrado
+
 python manage.py shell
+
+
+
+////////////////////////////////////////////////////////////
+
+# Dentro del shell, ejecutar:
+from core.models import Tenant, Domain
+
+# Ver todos los tenants
+tenants = Tenant.objects.all()
+for tenant in tenants:
+    print(f"Schema: {tenant.schema_name} | Nombre: {tenant.name}")
+
+# Ver todos los dominios
+dominios = Domain.objects.all()
+for dominio in dominios:
+    print(f"Dominio: {dominio.domain} → Schema: {dominio.tenant.schema_name}")
+
+# Verificar si existe hotel_tajibo
+Tenant.objects.get(schema_name='hotel_tajibo')
+
+# Salir del shell
+exit()
 
 
 
@@ -21,7 +46,7 @@ python manage.py tenant_command seed_servicios --schema=hotel_tajibo
 aplicamos las migraciones publicas 
 python manage.py migrate_schemas --schema=public
 
-
+---------------------------------------------------------------------------------------------
 
 
 dominio servicios 
@@ -57,6 +82,8 @@ crear datos de prueba de pagos
 python manage.py tenant_command seed_pagos --schema=hotel_tajibo
 
 
+////////////////////////////////////////////////////////////////////////////
+---------------------------------------------------------------------------
 
 para subircambios a la rama local y remota 
 
@@ -66,6 +93,30 @@ git commit -m "nombre del commit"
 git push origin Noel-back-clean 
 
 
+para extraer cambios 
+para sincronizar todo
+git fetch origin
+
+cambiarme de mi rama a la Develop 
+git checkout develop
+
+para extraer los cambios a rama local develop 
+git pull origin develop
+
+para volver a mi rama nuevamente 
+git checkout noel
+
+para extrar o mescalr develop a mi rama local noel 
+git merge develop
+
+para seleccionar los archivos para commit
+git add .
+
+git commit -m (nombre para el commit )
+
+
+/////////////////////////////////////////////////////////////////////////////////
+-----------------------------------------------------------------------------
 
 al crear una tabla de una base de datos para agregar 
 
@@ -86,6 +137,118 @@ python manage.py migrate_schemas --tenant
 
 # (o solo en hotel_tajibo)
 python manage.py migrate_schemas --tenant -s hotel_tajibo
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+TODO DE BACKUPS
+
+instalacion de APScheduler
+pip install apscheduler==3.10.4
+verificar que se instalo bien 
+pip show apscheduler
+
+debe aparecer algo asi 
+
+Name: APScheduler
+Version: 3.10.4
+Summary: In-process task scheduler with Cron-like capabilities
+...
+
+ pip install tzdata
+python.exe -m pip install --upgrade pip
+
+
+creamos carpetas para backups
+mkdir -p media/backups/full
+mkdir -p media/backups/tenant
+
+creamos las migraciones 
+python manage.py makemigrations backups
+python manage.py migrate backups
+
+para restaurar cualquiera de los 2 aplicamos este comando 
+psql -U postgres -d nombre_db < ruta_del_backup.sql
+
+
+
+
+SISTEMA DE BACKUPS
+
+# CREAR MIGRACIONES (IMPORTANTE - HACER PRIMERO)
+python manage.py makemigrations backups
+python manage.py migrate backups
+
+# BACKUPS MANUALES
+# Backup completo de toda la base de datos
+python manage.py backup_full
+python manage.py backup_full --type=manual
+
+# Backup de todos los tenants
+python manage.py backup_tenants
+
+# Backup de un tenant específico
+python manage.py backup_tenants --schema=hotel_tajibo
+
+# LIMPIEZA DE BACKUPS
+# Limpiar backups antiguos (según BACKUP_RETENTION_DAYS del .env)
+python manage.py cleanup_backups
+
+# Limpiar solo backups completos
+python manage.py cleanup_backups --type=full
+
+# Limpiar solo backups de tenants
+python manage.py cleanup_backups --type=tenant
+
+# Limpiar backups más antiguos de 30 días
+python manage.py cleanup_backups --older-than=30
+
+# Simular limpieza sin eliminar (ver qué se eliminaría)
+python manage.py cleanup_backups --dry-run
+
+# RESTAURACIÓN
+# Restaurar un tenant específico
+python manage.py restore_tenant hotel_tajibo ruta/al/archivo.sql
+
+# CONFIGURACIÓN EN .env
+BACKUP_ENABLED=True              # Habilitar/deshabilitar backups automáticos
+BACKUP_FREQUENCY=daily           # daily/weekly/monthly
+BACKUP_TIME=03:00               # Hora de ejecución (formato 24h)
+BACKUP_RETENTION_DAYS=7         # Días a conservar backups
+BACKUP_STORAGE=local            # local/s3/both
+
+# BACKUPS AUTOMÁTICOS
+# Los backups automáticos se ejecutan SOLO en producción (DEBUG=False)
+# En desarrollo (DEBUG=True) están deshabilitados por seguridad
+# El scheduler se inicia automáticamente cuando Django arranca
+
+# Para activar backups automáticos en producción:
+# 1. En .env, cambiar: DEBUG=False
+# 2. En .env, asegurar: BACKUP_ENABLED=True
+# 3. Reiniciar el servidor Django
+
+# ENDPOINTS API (requiere autenticación de admin)
+GET    http://localhost:8000/api/backups/                  # Listar backups
+GET    http://localhost:8000/api/backups/{id}/             # Detalle de backup
+DELETE http://localhost:8000/api/backups/{id}/             # Eliminar backup
+GET    http://localhost:8000/api/backups/{id}/descargar/   # Descargar backup
+POST   http://localhost:8000/api/backups/crear-full/       # Crear backup completo
+POST   http://localhost:8000/api/backups/crear-tenants/    # Crear backups de tenants
+GET    http://localhost:8000/api/backups/estadisticas/     # Ver estadísticas
+GET    http://localhost:8000/api/backups/configuracion/    # Ver configuración
+
+# UBICACIÓN DE LOS BACKUPS
+media/backups/full/      # Backups completos
+media/backups/tenant/    # Backups por tenant
+------------------------------------------------------------------------
+
+instalando estas librerias para el maching learnig version python 13
+numpy==2.3.4
+pandas==2.3.3
+scikit-learn==1.7.2
+joblib==1.5.2
 
 
 Correr seeder para datos generales: 
