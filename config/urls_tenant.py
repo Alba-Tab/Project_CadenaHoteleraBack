@@ -29,12 +29,12 @@ urlpatterns = [
     #ruta reportes para pagos (No mover el orden de estos 2!)
     path('api/pagos/reportes/', include('apps.pagos.reportes.urls')),
     path('api/', include('apps.pagos.urls')),
-    
+
     # path("api/", include("apps.servicios.urls")),# incluye servicios y servicioreservas
     #ruta reportes para servicios (No mover el orden de estos 2!)
     path("api/servicios/reportes/", include("apps.servicios.reportes.urls")),
     path("api/servicios/", include("apps.servicios.urls")),
-    
+
     path("api/servicios-asociados/", include("apps.servicios_asociados.urls")),
 
     path('api/folioestancias/', include('apps.folioestancias.urls')),
@@ -54,8 +54,9 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     #
     path('admin/', admin.site.urls),
-    
+    path('api/', include('core.urls')),  # encargado de la auditoria
+
     # path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     # path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/', include('core.urls')),#ebcargado de la auditoria
 ]
+

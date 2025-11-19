@@ -15,6 +15,7 @@ apscheduler==3.10.4
 django-tenants==3.9.0
 djangorestframework==3.16.1
 djangorestframework_simplejwt==5.5.1
+firebase-admin==7.1.0
 et_xmlfile==2.0.0
 fonttools==4.60.1
 fpdf2==2.7.9

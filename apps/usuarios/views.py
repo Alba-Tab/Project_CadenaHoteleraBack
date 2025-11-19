@@ -259,3 +259,40 @@ class UserViewSet(viewsets.ModelViewSet):
             'username': request.user.username,
             'email': request.user.email
         })
+
+    @action(detail=False, methods=['post'])
+    def actualizar_token_fcm(self, request):
+        """
+        Actualizar token FCM para notificaciones push
+        POST /api/usuarios/actualizar_token_fcm/
+        Body: {"fcm_token": "..."}
+        """
+        usuario = request.user
+        fcm_token = request.data.get('fcm_token')
+
+        if not fcm_token:
+            return Response({
+                'error': 'fcm_token es requerido'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        usuario.fcm_token = fcm_token
+        usuario.save()
+
+        return Response({
+            'message': 'Token FCM actualizado exitosamente',
+            'fcm_token': fcm_token
+        })
+
+    @action(detail=False, methods=['post'])
+    def eliminar_token_fcm(self, request):
+        """
+        Eliminar token FCM (cuando cierra sesión o desinstala app)
+        POST /api/usuarios/eliminar_token_fcm/
+        """
+        usuario = request.user
+        usuario.fcm_token = None
+        usuario.save()
+
+        return Response({
+            'message': 'Token FCM eliminado exitosamente'
+        })

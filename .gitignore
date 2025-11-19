@@ -157,6 +157,10 @@ logs/
 secrets.json
 credentials.json
 
+# Firebase credentials
+firebase/
+*firebase*.json
+
 # PostgreSQL
 *.sql
 *.dump
