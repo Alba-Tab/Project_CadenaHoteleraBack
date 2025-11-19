@@ -426,7 +426,7 @@ python manage.py shell
 ```python
 from django.contrib.auth import get_user_model
 User = get_user_model()
-User.objects.create_superuser(username="admin", email="admin@sol.com", password="12345")
+User.objects.create_superuser(username="taddy", email="admin@sol.com", password="123")
 ```
 
 ### Opción 2 — Comando directo
