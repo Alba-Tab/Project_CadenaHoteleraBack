@@ -208,6 +208,35 @@ class UserViewSet(viewsets.ModelViewSet):
             'total_permissions': len(permissions)
         })
 
+    @action(detail=False, methods=['get'])
+    def mis_reservas(self, request):
+        """
+        Obtener el historial de reservas del usuario actual
+        GET /api/usuarios/mis-reservas/
+        """
+        from apps.reservas.models import Reserva
+        from apps.reservas.serializers import ReservaSerializer
+        
+        user = request.user
+        
+        # Obtener todas las reservas del usuario, ordenadas por más reciente
+        reservas = Reserva.objects.filter(huesped=user).order_by('-fecha_reserva')
+        
+        serializer = ReservaSerializer(reservas, many=True)
+        
+        return Response({
+            'usuario': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'nombre_completo': f"{user.first_name} {user.last_name}".strip() or user.username
+            },
+            'reservas': serializer.data,
+            'total_reservas': reservas.count()
+        })
+
+
+
     @action(detail=False, methods=['put'])
     def change_password(self, request):
         """
