@@ -8,7 +8,7 @@ import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
-from core.models import Tenant, Domain
+from core.models import Tenant
 from apps.suscripciones.models import Plan
 
 def crear_tenant_publico():

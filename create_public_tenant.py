@@ -8,7 +8,7 @@ import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
-from core.models import Tenant, Domain
+from core.models import Tenant
 
 def create_public_tenant():
     """Crea el tenant público si no existe"""

@@ -62,8 +62,12 @@ TENANT_APPS = [
 
 
 INSTALLED_APPS = list(dict.fromkeys(SHARED_APPS + TENANT_APPS))
+
+# ============================================================================
+# CONFIGURACIÓN MULTITENANT basado en headers
+# ============================================================================
 TENANT_MODEL = "core.Tenant"
-TENANT_DOMAIN_MODEL = "core.Domain"
+# TENANT_DOMAIN_MODEL eliminado - ya no se usa enfoque de dominios
 
 DATABASE_ROUTERS = ("django_tenants.routers.TenantSyncRouter",)
 
@@ -77,11 +81,12 @@ EMAIL_HOST_PASSWORD = env.str('EMAIL_HOST_PASSWORD', default='')#type:ignore
 DEFAULT_FROM_EMAIL = env.str('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)#type:ignore
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
-    "config.middleware.middleware_tenant_header.TenantHeaderMiddleware",  # 🔹 NUEVO: Extrae tenant del header ANTES de TenantMainMiddleware
-    "django_tenants.middleware.main.TenantMainMiddleware",
-    'apps.suscripciones.middleware.SuscripcionMiddleware',  # 🔹 Middleware de suscripciones
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    
+    "config.middleware.tenant_header_middleware.TenantHeaderMiddleware",
+    'apps.suscripciones.middleware.SuscripcionMiddleware',
+    
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -89,21 +94,18 @@ MIDDLEWARE = [
     "config.middleware.middleware_user_audit.JWTActorMiddleware",
     "auditlog.middleware.AuditlogMiddleware",
     "config.middleware.middleware_auditlog.TenantAuditLogMiddleware",
-    "config.middleware.middleware_force_urlconf.ForcetenantUrlconfMiddleware",
+    
+    # Otros
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-#reorganize los middelewares para que el de JWTActorMiddleware esté antes que AuditlogMiddleware
 
-ROOT_URLCONF = "config.urls_public"
-PUBLIC_SCHEMA_URLCONF = "config.urls_public"
-TENANT_URLCONF = "config.urls_tenant"
-
-# Dominio base para tenants - debe configurarse en producción
-TENANT_BASE_DOMAIN = env.str("TENANT_BASE_DOMAIN", default="localhost") #type:ignore
-
-# Usar header para identificar tenant en lugar del dominio (para CloudFront/App Runner)
-TENANT_SUBFOLDER_PREFIX = env.bool("TENANT_SUBFOLDER_PREFIX", default=False) #type:ignore
+# ============================================================================
+# CONFIGURACIÓN DE URLs
+# ============================================================================
+ROOT_URLCONF = "config.urls"  # Archivo principal que delega a django-tenants
+PUBLIC_SCHEMA_URLCONF = "config.urls_public"  # URLs para schema 'public'
+TENANT_URLCONF = "config.urls_tenant"  # URLs para schemas de tenants
 
 AUTH_USER_MODEL = "usuarios.User"
 
@@ -119,7 +121,7 @@ CORS_ALLOW_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
-    'x-tenant-domain',  # Header personalizado para identificar el tenant
+    'x-tenant',  # 🏨 Header para identificar el tenant
 ]
 
 #-------------------------------------------------------------------------------------------------------------------
