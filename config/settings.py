@@ -78,6 +78,7 @@ DEFAULT_FROM_EMAIL = env.str('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)#type
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
+    "config.middleware.middleware_tenant_header.TenantHeaderMiddleware",  # 🔹 NUEVO: Extrae tenant del header ANTES de TenantMainMiddleware
     "django_tenants.middleware.main.TenantMainMiddleware",
     'apps.suscripciones.middleware.SuscripcionMiddleware',  # 🔹 Middleware de suscripciones
     "django.middleware.security.SecurityMiddleware",
@@ -97,12 +98,29 @@ MIDDLEWARE = [
 ROOT_URLCONF = "config.urls_public"
 PUBLIC_SCHEMA_URLCONF = "config.urls_public"
 TENANT_URLCONF = "config.urls_tenant"
+
+# Dominio base para tenants - debe configurarse en producción
 TENANT_BASE_DOMAIN = env.str("TENANT_BASE_DOMAIN", default="localhost") #type:ignore
+
+# Usar header para identificar tenant en lugar del dominio (para CloudFront/App Runner)
+TENANT_SUBFOLDER_PREFIX = env.bool("TENANT_SUBFOLDER_PREFIX", default=False) #type:ignore
 
 AUTH_USER_MODEL = "usuarios.User"
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'x-tenant-domain',  # Header personalizado para identificar el tenant
+]
 
 #-------------------------------------------------------------------------------------------------------------------
 
@@ -209,10 +227,6 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
-
-# Media files (archivos subidos)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
