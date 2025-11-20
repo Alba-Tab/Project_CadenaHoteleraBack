@@ -1,5 +1,5 @@
 from pathlib import Path
-import environ 
+import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(DEBUG=(bool, False))
@@ -86,7 +86,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "config.middleware.middleware_user_audit.JWTActorMiddleware", 
+    "config.middleware.middleware_user_audit.JWTActorMiddleware",
     "auditlog.middleware.AuditlogMiddleware",
     "config.middleware.middleware_auditlog.TenantAuditLogMiddleware",
     "config.middleware.middleware_force_urlconf.ForcetenantUrlconfMiddleware",
@@ -122,6 +122,14 @@ CORS_ALLOW_HEADERS = [
     'x-tenant-domain',  # Header personalizado para identificar el tenant
 ]
 
+#-------------------------------------------------------------------------------------------------------------------
+
+#-----------------------Arreglos de cors para la nube---------------------------------------
+CORS_ALLOW_HEADERS = ['*']  # Permitir todas las cabeceras
+CORS_ALLOW_METHODS = ['*']  # Permitir todos los métodos HTTP
+CORS_EXPOSE_HEADERS = ['*']  # Exponer todas las cabeceras al cliente
+CORS_PREFLIGHT_MAX_AGE = 86400  # Cache de preflight por 24 horas
+#-------------------------------------------------------------------------------------------------------------------
 # ✨ CONFIGURACIÓN DE JWT
 from datetime import timedelta
 
@@ -166,6 +174,34 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+
+# ============================================================================
+# CONFIGURACIÓN DE SEGURIDAD CSRF PARA CORS
+# ============================================================================
+# Orígenes confiables para CSRF
+CSRF_TRUSTED_ORIGINS = [    
+    'https://albadev.me',
+    'http://albadev.me',
+    'https://*.albadev.me',  # Todos los subdominios de albadev.me
+    'http://*.albadev.me',
+    'http://hoteles-front.s3-website.us-east-2.amazonaws.com',
+    'https://jgyqzmxg7p.us-east-2.awsapprunner.com',
+    'http://localhost:4200',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
+# Permitir cookies cross-domain
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = False  # Cambiar a True en producción con HTTPS
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SECURE = False  # Cambiar a True en producción con HTTPS
+
+
+
+# ============================================================================
+# CONFIGURACIÓN DE SEGURIDAD CSRF PARA CORS
+# ============================================================================
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -217,9 +253,13 @@ STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 # Media files URL
 MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
-MEDIA_ROOT = '' 
+MEDIA_ROOT = ''
 
 from storages.backends.s3boto3 import S3Boto3Storage
 from django.core.files.storage import default_storage
 
 default_storage._wrapped = S3Boto3Storage() # type: ignore
+
+# Firebase Configuration
+import os
+FIREBASE_CREDENTIAL_PATH = os.path.join(BASE_DIR, 'firebase', 'project-hotel-af807-firebase-adminsdk-fbsvc-5fca853de0.json')

@@ -67,11 +67,14 @@ class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     photo = serializers.ImageField(required=False, allow_null=True)
     photo_url = serializers.SerializerMethodField(read_only=True)
+    hotel_id = serializers.IntegerField(source='hotel.id', read_only=True, allow_null=True)
+    hotel_nombre = serializers.CharField(source='hotel.nombre', read_only=True, allow_null=True)
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'groups', 'group_ids', 'password', 
-                  'first_name', 'last_name', 'photo', 'photo_url']
+        fields = ['id', 'username', 'email', 'groups', 'group_ids', 'password',
+                  'first_name', 'last_name', 'photo', 'photo_url', 'fcm_token',
+                  'hotel', 'hotel_id', 'hotel_nombre']
 
     def get_photo_url(self, obj):
         if obj.photo:
@@ -89,7 +92,7 @@ class UserSerializer(serializers.ModelSerializer):
         if photo:
             user.photo = photo
         user.save()
-        
+
         # Indexar rostro en Rekognition
         if photo:
             try:
@@ -97,29 +100,29 @@ class UserSerializer(serializers.ModelSerializer):
                 FacialRecognitionService.index_face(user.id, user.photo.name)
             except Exception as e:
                 print(f"⚠️ Error indexando rostro: {e}")
-        
+
         return user
 
     def update(self, instance, validated_data):
         password = validated_data.pop('password', None)
         groups = validated_data.pop('groups', None)
         photo = validated_data.pop('photo', None)
-        
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        
+
         if password:
             instance.set_password(password)
-        
+
         if groups is not None:
             instance.groups.set(groups)
-        
+
         # Manejar foto por separado
         if photo is not None:
             try:
                 instance.photo = photo
                 instance.save()
-                
+
                 # Re-indexar rostro
                 try:
                     from apps.facial_recognition.services import FacialRecognitionService
@@ -137,5 +140,5 @@ class UserSerializer(serializers.ModelSerializer):
             # Obtener todos los campos del modelo excepto photo
             update_fields = [f.name for f in instance._meta.fields if f.name != 'photo' and f.name != 'id']
             instance.save(update_fields=update_fields)
-        
+
         return instance
