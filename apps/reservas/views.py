@@ -4,7 +4,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.utils import timezone
 import logging
-import threading
+import gevent
 
 from apps.habitaciones.models import Habitacion
 from apps.reservas.models import Reserva
@@ -84,10 +84,9 @@ class ReservaViewSet(viewsets.ModelViewSet):
                     print(f"❌ [THREAD] Error: {str(e)}")
                     logger.error(f"❌ Error en thread de notificación: {str(e)}")
 
-            # Iniciar thread daemon (se cierra automáticamente)
-            thread = threading.Thread(target=enviar_notificacion, daemon=True)
-            thread.start()
-            print(f"✅ Thread de notificación iniciado (no bloqueante)")
+            # Iniciar greenlet (async con gevent)
+            gevent.spawn(enviar_notificacion)
+            print(f"✅ Greenlet de notificación iniciado (no bloqueante)")
         else:
             print(f"⚠️ Usuario sin FCM token - notificación omitida")
             logger.warning(f"⚠️ Usuario {huesped.username if huesped else 'N/A'} sin FCM token")

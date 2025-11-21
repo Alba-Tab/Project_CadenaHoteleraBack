@@ -114,11 +114,24 @@ class NotificationService:
             )
             print("📱 Mensaje creado. Enviando...")
 
-            # Enviar mensaje
-            response = messaging.send(message)
-            print(f"✅✅✅ NOTIFICACION ENVIADA EXITOSAMENTE. ID: {response}")
-            logger.info(f"Notificación enviada exitosamente. ID: {response}")
-            return True
+            # Enviar mensaje con timeout de 10 segundos
+            import gevent
+            from gevent import Timeout
+
+            timeout = Timeout(10.0)  # 10 segundos timeout
+            timeout.start()
+            try:
+                response = messaging.send(message)
+                timeout.cancel()
+                print(f"✅✅✅ NOTIFICACION ENVIADA EXITOSAMENTE. ID: {response}")
+                logger.info(f"Notificación enviada exitosamente. ID: {response}")
+                return True
+            except Timeout:
+                print("❌ TIMEOUT: messaging.send() tardó más de 10 segundos")
+                logger.error("Timeout enviando notificación a Firebase")
+                return False
+            finally:
+                timeout.cancel()
 
         except messaging.UnregisteredError as e:
             print(f"❌ Token FCM inválido o expirado: {token[:30]}...")
