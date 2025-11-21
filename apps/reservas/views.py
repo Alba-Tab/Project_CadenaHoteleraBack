@@ -2,11 +2,15 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+import logging
 
 from apps.habitaciones.models import Habitacion
 from apps.reservas.models import Reserva
 from apps.reservas.serializers import ReservaSerializer
 from apps.reservas.services import procesar_reserva, actualizar_reserva
+from core.notifications_service import NotificationService
+
+logger = logging.getLogger(__name__)
 
 
 # Create your views here.
@@ -19,6 +23,21 @@ class ReservaViewSet(viewsets.ModelViewSet):
         data = serializer.validated_data
         reserva = procesar_reserva(data)
         serializer.instance = reserva
+
+        # 🔔 Enviar notificación push DESPUÉS de crear la reserva (no bloquea DB)
+        huesped = reserva.huesped
+        if huesped and huesped.fcm_token:
+            try:
+                NotificationService.send_reserva_notification(
+                    usuario=huesped,
+                    reserva_id=reserva.id,
+                    mensaje=f"Tu reserva en {reserva.hotel.nombre} del {reserva.fecha_entrada} al {reserva.fecha_salida} ha sido confirmada",
+                    notification_type='confirmacion'
+                )
+                logger.info(f"✅ Notificación enviada al huésped {huesped.username}")
+            except Exception as e:
+                # No romper la respuesta si falla la notificación
+                logger.error(f"⚠️ Error enviando notificación: {str(e)}")
 
     def perform_update(self, serializer):
         data = serializer.validated_data
