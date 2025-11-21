@@ -87,16 +87,23 @@ class NotificationService:
         Returns:
             bool: True si se envió correctamente, False si falló
         """
+        print(f"📱 send_to_token LLAMADO: token={token[:30]}..., title={title}")
+        logger.info(f"📱 send_to_token: token={token[:30]}..., title={title}")
+
         if not cls._initialize_firebase():
+            print("❌ Firebase no se pudo inicializar")
             return False
 
         try:
+            print("📱 Convirtiendo data a strings...")
             # Convertir todos los valores de data a string (Firebase lo requiere)
             string_data = {}
             if data:
                 string_data = {k: str(v) for k, v in data.items()}
+            print(f"📱 Data convertida: {string_data}")
 
             # Crear el mensaje
+            print("📱 Creando mensaje Firebase...")
             message = messaging.Message(
                 notification=messaging.Notification(
                     title=title,
@@ -105,17 +112,23 @@ class NotificationService:
                 data=string_data,
                 token=token
             )
+            print("📱 Mensaje creado. Enviando...")
 
             # Enviar mensaje
             response = messaging.send(message)
+            print(f"✅✅✅ NOTIFICACION ENVIADA EXITOSAMENTE. ID: {response}")
             logger.info(f"Notificación enviada exitosamente. ID: {response}")
             return True
 
-        except messaging.UnregisteredError:
+        except messaging.UnregisteredError as e:
+            print(f"❌ Token FCM inválido o expirado: {token[:30]}...")
             logger.warning(f"Token FCM inválido o expirado: {token}")
             return False
         except Exception as e:
+            print(f"❌❌❌ ERROR ENVIANDO NOTIFICACION: {str(e)}")
             logger.error(f"Error enviando notificación: {str(e)}")
+            import traceback
+            print(f"❌ TRACEBACK: {traceback.format_exc()}")
             return False
 
     @classmethod

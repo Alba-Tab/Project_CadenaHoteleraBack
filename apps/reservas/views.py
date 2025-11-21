@@ -2,6 +2,7 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from django.utils import timezone
 import logging
 import threading
 
@@ -21,49 +22,47 @@ class ReservaViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
 
     def perform_create(self, serializer):
+        from django.db import connection
         data = serializer.validated_data
-        print(f"⏱️ PERFORM_CREATE INICIO - data: {data}")
-        logger.info(f"⏱️ Inicio perform_create - data: {data}")
+        print(f"⏱️ PERFORM_CREATE INICIO")
+        logger.info(f"⏱️ Inicio perform_create")
 
         reserva = procesar_reserva(data)
         serializer.instance = reserva
         print(f"⏱️ RESERVA CREADA: ID={reserva.id}")
-        logger.info(f"⏱️ Reserva creada: ID={reserva.id}")
 
-        # 🔔 Enviar notificación push en BACKGROUND (no bloquea respuesta)
+        # 🔔 ENVIAR NOTIFICACIÓN DIRECTAMENTE (SIN THREAD) - GARANTIZADO
         huesped = reserva.huesped
-        print(f"🔍 DEBUG HUESPED: {huesped}, ID={huesped.id if huesped else 'None'}, HAS_TOKEN={bool(huesped.fcm_token if huesped else False)}")
-        logger.info(f"🔍 DEBUG: huesped={huesped}, huesped.id={huesped.id if huesped else 'None'}, token={'[' + huesped.fcm_token[:20] + '...]' if huesped and huesped.fcm_token else 'None'}")
 
         if huesped and huesped.fcm_token:
-            print(f"✅ HUESPED TIENE TOKEN FCM: {huesped.fcm_token[:30]}...")
-            # ✅ Ejecutar en thread separado (no espera que termine)
-            def enviar_notificacion_background():
-                try:
-                    print("🔔 THREAD INICIADO: Enviando notificación push...")
-                    logger.info("🔔 Thread: Enviando notificación push...")
-                    
-                    result = NotificationService.send_reserva_notification(
-                        usuario=huesped,
-                        reserva_id=reserva.id,
-                        mensaje=f"Tu reserva en {reserva.hotel.nombre} del {reserva.fecha_entrada} al {reserva.fecha_salida} ha sido confirmada",
-                        notification_type='confirmacion'
-                    )
-                    print(f"✅ THREAD COMPLETADO: Notificación enviada={result}")
-                    logger.info(f"✅ Thread: Notificación enviada al huésped {huesped.username}, result={result}")
-                except Exception as e:
-                    print(f"❌❌❌ THREAD ERROR: {str(e)}")
-                    logger.error(f"⚠️ Thread: Error enviando notificación: {str(e)}")
-                    import traceback
-                    print(f"❌ TRACEBACK: {traceback.format_exc()}")
+            print(f"✅ ENVIANDO NOTIFICACION DIRECTA al usuario {huesped.username}")
+            try:
+                # Guardar info necesaria ANTES de cualquier thread
+                token = huesped.fcm_token
+                username = huesped.username
+                hotel_nombre = reserva.hotel.nombre
+                fecha_entrada = str(reserva.fecha_entrada)
+                fecha_salida = str(reserva.fecha_salida)
+                reserva_id = reserva.id
 
-            thread = threading.Thread(target=enviar_notificacion_background, daemon=True)
-            thread.start()
-            print("🚀 THREAD LANZADO - Respondiendo al cliente")
-            logger.info("🚀 Thread de notificación iniciado - respondiendo al cliente")
+                # Enviar DIRECTAMENTE - sin thread
+                NotificationService.send_to_token(
+                    token=token,
+                    title='Reserva Confirmada',
+                    body=f"Tu reserva en {hotel_nombre} del {fecha_entrada} al {fecha_salida} ha sido confirmada",
+                    data={
+                        'type': 'reserva',
+                        'notification_type': 'confirmacion',
+                        'reserva_id': str(reserva_id),
+                        'timestamp': str(timezone.now())
+                    }
+                )
+                print(f"✅ NOTIFICACION ENVIADA")
+            except Exception as e:
+                print(f"❌ ERROR ENVIANDO: {str(e)}")
+                logger.error(f"Error: {str(e)}")
         else:
-            print(f"❌ NO SE ENVIA NOTIFICACION - Huésped={huesped}, Token={huesped.fcm_token if huesped else 'N/A'}")
-            logger.warning(f"⚠️ No se envió notificación - Huésped sin token FCM")
+            print(f"❌ NO HAY TOKEN FCM")
 
     def perform_update(self, serializer):
         data = serializer.validated_data
