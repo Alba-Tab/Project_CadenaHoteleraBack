@@ -20,31 +20,46 @@ class NotificationService:
             try:
                 # Intentar primero con variable de entorno (producción)
                 if hasattr(settings, 'FIREBASE_CREDENTIALS_JSON') and settings.FIREBASE_CREDENTIALS_JSON:
+                    logger.info("🔧 Intentando cargar credenciales desde variable de entorno FIREBASE_CREDENTIALS_JSON")
                     cred_dict = json.loads(settings.FIREBASE_CREDENTIALS_JSON)
+
+                    # Verificar que tenga los campos necesarios
+                    required_fields = ['type', 'project_id', 'private_key', 'client_email']
+                    missing_fields = [f for f in required_fields if f not in cred_dict]
+                    if missing_fields:
+                        logger.error(f"❌ Faltan campos en credenciales Firebase: {missing_fields}")
+                        return False
+
                     cred = credentials.Certificate(cred_dict)
-                    logger.info("Usando credenciales Firebase desde variable de entorno")
+                    logger.info(f"✅ Usando credenciales Firebase desde variable de entorno | Project: {cred_dict.get('project_id')}")
 
                 # Si no, usar archivo local (desarrollo)
                 elif hasattr(settings, 'FIREBASE_CREDENTIAL_PATH'):
                     cred_path = settings.FIREBASE_CREDENTIAL_PATH
+                    logger.info(f"🔧 Intentando cargar credenciales desde archivo: {cred_path}")
+
                     if not os.path.exists(cred_path):
-                        logger.error("Archivo firebase-credentials.json no encontrado")
+                        logger.error(f"❌ Archivo firebase-credentials.json no encontrado en: {cred_path}")
                         return False
+
                     cred = credentials.Certificate(cred_path)
-                    logger.info("Usando credenciales Firebase desde archivo local")
+                    logger.info(f"✅ Usando credenciales Firebase desde archivo local")
 
                 else:
-                    logger.error("No se encontraron credenciales de Firebase")
+                    logger.error("❌ No se encontraron credenciales de Firebase (ni variable de entorno ni archivo)")
                     return False
 
                 # Inicializar Firebase
                 firebase_admin.initialize_app(cred)
                 cls._initialized = True
-                logger.info("Firebase Admin SDK inicializado correctamente")
+                logger.info("🎉 Firebase Admin SDK inicializado correctamente")
                 return True
 
+            except json.JSONDecodeError as e:
+                logger.error(f"❌ Error parseando JSON de credenciales Firebase: {str(e)}")
+                return False
             except Exception as e:
-                logger.error(f"Error inicializando Firebase: {str(e)}")
+                logger.error(f"❌ Error inicializando Firebase: {str(e)} | Tipo: {type(e).__name__}")
                 return False
 
         return True
@@ -64,29 +79,42 @@ class NotificationService:
             bool: True si se envió correctamente, False si falló
         """
         if not cls._initialize_firebase():
+            logger.error("Firebase no está inicializado")
+            return False
+
+        if not token:
+            logger.error("Token FCM vacío o None")
             return False
 
         try:
+            # Convertir todos los valores de data a string (Firebase lo requiere)
+            string_data = {}
+            if data:
+                string_data = {k: str(v) for k, v in data.items()}
+
             # Crear el mensaje
             message = messaging.Message(
                 notification=messaging.Notification(
                     title=title,
                     body=body
                 ),
-                data=data or {},
+                data=string_data,
                 token=token
             )
 
             # Enviar mensaje
             response = messaging.send(message)
-            logger.info(f"Notificación enviada exitosamente. ID: {response}")
+            logger.info(f"✅ Notificación enviada exitosamente. ID: {response} | Token: {token[:20]}...")
             return True
 
         except messaging.UnregisteredError:
-            logger.warning(f"Token FCM inválido o expirado: {token}")
+            logger.warning(f"❌ Token FCM inválido o expirado: {token[:20]}...")
+            return False
+        except firebase_admin.exceptions.InvalidArgumentError as e:
+            logger.error(f"❌ Argumento inválido en Firebase: {str(e)} | Token: {token[:20]}...")
             return False
         except Exception as e:
-            logger.error(f"Error enviando notificación: {str(e)}")
+            logger.error(f"❌ Error enviando notificación: {str(e)} | Token: {token[:20]}... | Tipo: {type(e).__name__}")
             return False
 
     @classmethod
@@ -104,8 +132,10 @@ class NotificationService:
             bool: True si se envió correctamente, False si falló
         """
         if not hasattr(usuario, 'fcm_token') or not usuario.fcm_token:
-            logger.warning(f"Usuario {usuario.username} no tiene token FCM")
+            logger.warning(f"⚠️ Usuario {usuario.username} no tiene token FCM registrado")
             return False
+
+        logger.info(f"📤 Enviando notificación a usuario: {usuario.username} | Token: {usuario.fcm_token[:20]}...")
 
         return cls.send_to_token(
             token=usuario.fcm_token,

@@ -11,9 +11,9 @@ class TenantViewSet(viewsets.ModelViewSet):
     ViewSet para gestión de tenants (uso interno/admin).
     """
     permission_classes = [AllowAny]
-    queryset = Tenant.objects.all() 
+    queryset = Tenant.objects.all()
     serializer_class = TenantModelSerializer
-    
+
     def create(self, request, *args, **kwargs):
         """Crear tenant básico (sin usuario)"""
         from core.services import TenantService
@@ -35,7 +35,7 @@ class TenantViewSet(viewsets.ModelViewSet):
             )
 
         return Response(result, status=status.HTTP_201_CREATED)
- 
+
 class TenantFormViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     """
     ViewSet para registro público de nuevos tenants (formulario de registro).
@@ -43,7 +43,7 @@ class TenantFormViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     """
     permission_classes = [AllowAny]
     serializer_class = TenantFormSerializer
-    
+
     def create(self, request, *args, **kwargs):
         serializer = TenantFormSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
