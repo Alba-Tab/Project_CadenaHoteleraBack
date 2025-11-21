@@ -21,12 +21,18 @@ class ReservaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         data = serializer.validated_data
+        logger.info(f"⏱️ Inicio perform_create - data: {data}")
+
         reserva = procesar_reserva(data)
         serializer.instance = reserva
+        logger.info(f"⏱️ Reserva creada: ID={reserva.id}")
 
         # 🔔 Enviar notificación push DESPUÉS de crear la reserva (no bloquea DB)
         huesped = reserva.huesped
+        logger.info(f"🔍 DEBUG: huesped={huesped}, huesped.id={huesped.id if huesped else 'None'}, token={'[' + huesped.fcm_token[:20] + '...]' if huesped and huesped.fcm_token else 'None'}")
+
         if huesped and huesped.fcm_token:
+            logger.info("🔔 Enviando notificación push...")
             try:
                 NotificationService.send_reserva_notification(
                     usuario=huesped,
@@ -38,6 +44,8 @@ class ReservaViewSet(viewsets.ModelViewSet):
             except Exception as e:
                 # No romper la respuesta si falla la notificación
                 logger.error(f"⚠️ Error enviando notificación: {str(e)}")
+        else:
+            logger.warning(f"⚠️ No se envió notificación - Huésped sin token FCM")
 
     def perform_update(self, serializer):
         data = serializer.validated_data
