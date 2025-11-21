@@ -146,10 +146,37 @@ class BackupViewSet(viewsets.ModelViewSet):
                 backup_record.mensaje = message
                 backup_record.tamaño_bytes = file_size
                 backup_record.duracion_segundos = duration
+                
+                # Subir a S3 (obligatorio)
+                from django.conf import settings
+                from .utils import subir_backup_a_s3
+                
+                bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', None)
+                if bucket_name:
+                    s3_url = subir_backup_a_s3(str(output_file), tenant_name='full')
+                    if s3_url:
+                        backup_record.archivo = s3_url  # Guardar URL de S3
+                        
+                        # Eliminar archivo local después de subir a S3
+                        if output_file.exists():
+                            output_file.unlink()
+                    else:
+                        backup_record.estado = 'error'
+                        backup_record.mensaje = 'Error al subir a S3'
+                else:
+                    backup_record.estado = 'error'
+                    backup_record.mensaje = 'AWS_STORAGE_BUCKET_NAME no configurado'
+                
                 backup_record.save()
                 
-                serializer = self.get_serializer(backup_record)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                if backup_record.estado == 'ok':
+                    serializer = self.get_serializer(backup_record)
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
+                else:
+                    return Response(
+                        {'error': backup_record.mensaje},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
             else:
                 backup_record.estado = 'error'
                 backup_record.mensaje = message
@@ -219,6 +246,27 @@ class BackupViewSet(viewsets.ModelViewSet):
                     backup_record.mensaje = message
                     backup_record.tamaño_bytes = file_size
                     backup_record.duracion_segundos = duration
+                    
+                    # Subir a S3 (obligatorio)
+                    from django.conf import settings
+                    from .utils import subir_backup_a_s3
+                    
+                    bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', None)
+                    if bucket_name:
+                        s3_url = subir_backup_a_s3(str(output_file), tenant_name=tenant.schema_name)
+                        if s3_url:
+                            backup_record.archivo = s3_url  # Guardar URL de S3
+                            
+                            # Eliminar archivo local después de subir a S3
+                            if output_file.exists():
+                                output_file.unlink()
+                        else:
+                            backup_record.estado = 'error'
+                            backup_record.mensaje = 'Error al subir a S3'
+                    else:
+                        backup_record.estado = 'error'
+                        backup_record.mensaje = 'AWS_STORAGE_BUCKET_NAME no configurado'
+                    
                     backup_record.save()
                 else:
                     backup_record.estado = 'error'
@@ -242,40 +290,67 @@ class BackupViewSet(viewsets.ModelViewSet):
     def descargar_backup(self, request, pk=None):
         """
         GET /api/backups/{id}/descargar/
-        Descarga un archivo de backup
+        Descarga un archivo de backup o genera URL firmada si está en S3
         """
+        from django.conf import settings
+        from .utils import generar_url_firmada_s3
+        
         # Obtener backup desde schema público
         with schema_context('public'):
             try:
                 backup = Backup.objects.get(pk=pk)
-                file_path_str = backup.archivo.path
+                archivo_url = str(backup.archivo)
             except Backup.DoesNotExist:
                 return Response(
                     {'error': 'Backup no encontrado'},
                     status=status.HTTP_404_NOT_FOUND
                 )
         
-        file_path = Path(file_path_str)
+        # Verificar si el archivo está en S3
+        is_s3_file = archivo_url.startswith('https://') or archivo_url.startswith('s3://')
         
-        if not file_path.exists():
-            return Response(
-                {'error': 'Archivo no encontrado'},
-                status=status.HTTP_404_NOT_FOUND
+        if is_s3_file:
+            # Generar URL firmada para descarga temporal (válida por 1 hora)
+            url_firmada = generar_url_firmada_s3(archivo_url, expiracion_segundos=3600)
+            
+            if url_firmada:
+                return Response({
+                    'url': url_firmada,
+                    'expira_en_segundos': 3600,
+                    'mensaje': 'URL de descarga temporal generada (válida por 1 hora)'
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response(
+                    {'error': 'Error al generar URL de descarga'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        else:
+            # Archivo local - descarga directa
+            media_root = getattr(settings, 'MEDIA_ROOT', Path(settings.BASE_DIR) / 'media')
+            file_path = Path(media_root) / archivo_url
+            
+            if not file_path.exists():
+                return Response(
+                    {'error': 'Archivo no encontrado'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            return FileResponse(
+                open(file_path, 'rb'),
+                as_attachment=True,
+                filename=file_path.name
             )
-        
-        return FileResponse(
-            open(file_path, 'rb'),
-            as_attachment=True,
-            filename=file_path.name
-        )
     
     @action(detail=True, methods=['post'], url_path='restaurar')
     def restaurar_backup(self, request, pk=None):
         """
         POST /api/backups/{id}/restaurar/
-        Restaura un backup (completo o de un tenant específico)
+        Restaura un backup (completo o de un tenant específico) desde S3
         """
         from django.conf import settings
+        import tempfile
+        import boto3
+        from botocore.exceptions import ClientError
         
         # Obtener información del backup desde schema público
         with schema_context('public'):
@@ -284,9 +359,7 @@ class BackupViewSet(viewsets.ModelViewSet):
                 backup_id = backup.id
                 backup_estado = backup.estado
                 backup_type = backup.backup_type
-                
-                # Obtener la ruta del archivo (ej: "backups/tenant/noelhotel_20251031_004217.sql")
-                archivo_name = str(backup.archivo)
+                archivo_url = str(backup.archivo)
                 
                 # Obtener schema_name si es un tenant
                 schema_name = None
@@ -299,21 +372,6 @@ class BackupViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_404_NOT_FOUND
                 )
         
-        # Construir ruta completa del archivo: BASE_DIR/media/backups/tenant/noelhotel_xxx.sql
-        media_root = getattr(settings, 'MEDIA_ROOT', Path(settings.BASE_DIR) / 'media')
-        file_path = Path(media_root) / archivo_name
-        
-        # Verificar que el archivo existe
-        if not file_path.exists():
-            return Response(
-                {
-                    'error': 'Archivo de backup no encontrado',
-                    'ruta_buscada': str(file_path),
-                    'archivo_db': archivo_name
-                },
-                status=status.HTTP_404_NOT_FOUND
-            )
-        
         # Verificar que el backup está en estado OK
         if backup_estado != 'ok':
             return Response(
@@ -321,24 +379,104 @@ class BackupViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Ejecutar restauración
-        start_time = time.time()
-        success, message = execute_pg_restore(file_path, schema_name=schema_name)
-        duration = int(time.time() - start_time)
+        # Determinar si el archivo está en S3 o local
+        is_s3_file = archivo_url.startswith('https://') or archivo_url.startswith('s3://')
         
-        if success:
-            return Response({
-                'mensaje': message,
-                'backup_id': backup_id,
-                'tipo': backup_type,
-                'tenant': schema_name if schema_name else 'Completo',
-                'duracion_segundos': duration
-            }, status=status.HTTP_200_OK)
+        if is_s3_file:
+            # CASO 1: Archivo en S3 - Descargar temporalmente
+            try:
+                # Configurar cliente S3
+                s3_client = boto3.client(
+                    's3',
+                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                    region_name=settings.AWS_S3_REGION_NAME
+                )
+                
+                bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+                
+                # Extraer key del URL
+                s3_key = archivo_url.split('.amazonaws.com/')[-1]
+                
+                # Crear archivo temporal (cerrar el handle antes de usarlo)
+                tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.sql')
+                temp_path = Path(tmp_file.name)
+                tmp_file.close()  # ✅ Cerrar el archivo ANTES de descargar
+                
+                try:
+                    # Descargar de S3
+                    s3_client.download_file(bucket_name, s3_key, str(temp_path))
+                    
+                    # Ejecutar restauración
+                    start_time = time.time()
+                    success, message = execute_pg_restore(temp_path, schema_name=schema_name)
+                    duration = int(time.time() - start_time)
+                    
+                    if success:
+                        return Response({
+                            'mensaje': message,
+                            'backup_id': backup_id,
+                            'tipo': backup_type,
+                            'tenant': schema_name if schema_name else 'Completo',
+                            'duracion_segundos': duration,
+                            'origen': 's3'
+                        }, status=status.HTTP_200_OK)
+                    else:
+                        return Response(
+                            {'error': message},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                        )
+                finally:
+                    # Eliminar archivo temporal siempre
+                    if temp_path.exists():
+                        temp_path.unlink()
+                        
+            except ClientError as e:
+                error_code = e.response.get('Error', {}).get('Code', 'Unknown')
+                error_message = e.response.get('Error', {}).get('Message', str(e))
+                return Response(
+                    {'error': f'Error al descargar de S3 [{error_code}]: {error_message}'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            except Exception as e:
+                return Response(
+                    {'error': f'Error inesperado: {str(e)}'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
         else:
-            return Response(
-                {'error': message},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            # CASO 2: Archivo local (para backups antiguos)
+            media_root = getattr(settings, 'MEDIA_ROOT', Path(settings.BASE_DIR) / 'media')
+            file_path = Path(media_root) / archivo_url
+            
+            if not file_path.exists():
+                return Response(
+                    {
+                        'error': 'Archivo de backup no encontrado',
+                        'ruta_buscada': str(file_path),
+                        'archivo_db': archivo_url
+                    },
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Ejecutar restauración
+            start_time = time.time()
+            success, message = execute_pg_restore(file_path, schema_name=schema_name)
+            duration = int(time.time() - start_time)
+            
+            if success:
+                return Response({
+                    'mensaje': message,
+                    'backup_id': backup_id,
+                    'tipo': backup_type,
+                    'tenant': schema_name if schema_name else 'Completo',
+                    'duracion_segundos': duration,
+                    'origen': 'local'
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response(
+                    {'error': message},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
     
     @action(detail=False, methods=['get'], url_path='estadisticas')
     def estadisticas(self, request):

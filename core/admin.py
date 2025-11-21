@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from core.models import Tenant, Domain
+from core.models import Tenant
 
 
 @admin.register(Tenant)
@@ -9,7 +9,7 @@ class TenantAdmin(admin.ModelAdmin):
     Administración de Tenants (Esquemas)
     """
     list_display = [
-        'schema_name', 'name', 'dominios', 'suscripcion_activa', 
+        'schema_name', 'name', 'suscripcion_activa', 
         'on_trial_badge', 'paid_until'
     ]
     list_filter = ['on_trial', 'paid_until']
@@ -19,25 +19,14 @@ class TenantAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Información del Tenant', {
-            'fields': ('schema_name', 'name')
+            'fields': ('schema_name', 'name'),
+            'description': 'Schema name es el identificador único del tenant (código de empresa)'
         }),
         ('Estado', {
             'fields': ('on_trial', 'paid_until'),
             'description': 'Estado del tenant y fechas de pago'
         }),
     )
-    
-    def dominios(self, obj):
-        """Muestra los dominios asociados"""
-        domains = obj.domains.all()
-        if domains:
-            domain_list = '<br>'.join([
-                f'{"🌐 " if d.is_primary else "  "}{d.domain}'
-                for d in domains
-            ])
-            return format_html(domain_list)
-        return '-'
-    dominios.short_description = 'Dominios'
     
     def suscripcion_activa(self, obj):
         """Muestra la suscripción activa del tenant"""
@@ -73,40 +62,3 @@ class TenantAdmin(admin.ModelAdmin):
         return format_html('<span style="color: #95a5a6;">-</span>')
     on_trial_badge.short_description = 'Trial'
 
-
-@admin.register(Domain)
-class DomainAdmin(admin.ModelAdmin):
-    """
-    Administración de Dominios
-    """
-    list_display = [
-        'domain', 'tenant_info', 'is_primary_badge'
-    ]
-    list_filter = ['is_primary']
-    search_fields = ['domain', 'tenant__schema_name', 'tenant__name']
-    ordering = ['domain']
-    
-    fieldsets = (
-        ('Información del Dominio', {
-            'fields': ('domain', 'tenant', 'is_primary')
-        }),
-    )
-    
-    def tenant_info(self, obj):
-        """Muestra información del tenant"""
-        return format_html(
-            '<strong>{}</strong><br><small style="color: #666;">{}</small>',
-            obj.tenant.name,
-            obj.tenant.schema_name
-        )
-    tenant_info.short_description = 'Tenant'
-    
-    def is_primary_badge(self, obj):
-        """Badge para dominio primario"""
-        if obj.is_primary:
-            return format_html(
-                '<span style="background-color: #3498db; color: white; '
-                'padding: 2px 8px; border-radius: 3px; font-size: 11px;">⭐ Primario</span>'
-            )
-        return format_html('<span style="color: #95a5a6;">Secundario</span>')
-    is_primary_badge.short_description = 'Tipo'

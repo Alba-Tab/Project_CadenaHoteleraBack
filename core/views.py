@@ -7,23 +7,26 @@ from core.services import TenantFormService
 from rest_framework.views import APIView
 
 class TenantViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestión de tenants (uso interno/admin).
+    """
     permission_classes = [AllowAny]
     queryset = Tenant.objects.all() 
     serializer_class = TenantModelSerializer
+    
     def create(self, request, *args, **kwargs):
-        """Crear tenant + domain"""
+        """Crear tenant básico (sin usuario)"""
+        from core.services import TenantService
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         schema_name = serializer.validated_data["schema_name"]
         name = serializer.validated_data["name"]
-        domain = serializer.validated_data["domain"]
 
         try:
-            result = TenantFormService.create_tenant_basic(
+            result = TenantService.create_tenant_basic(
                 schema_name=schema_name,
-                name=name,
-                domain=domain
+                name=name
             )
         except Exception as exc:
             return Response(
@@ -34,6 +37,10 @@ class TenantViewSet(viewsets.ModelViewSet):
         return Response(result, status=status.HTTP_201_CREATED)
  
 class TenantFormViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
+    """
+    ViewSet para registro público de nuevos tenants (formulario de registro).
+    Ahora sin dominios - solo usa código de empresa (schema_name).
+    """
     permission_classes = [AllowAny]
     serializer_class = TenantFormSerializer
     
@@ -42,7 +49,7 @@ class TenantFormViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
 
         try:
-            result = TenantFormService.create_tenant_with_domain(serializer.validated_data) #type:ignore
+            result = TenantFormService.create_tenant_fast(serializer.validated_data)
         except Exception as exc:
             return Response(
                 {"detail": "No se pudo crear el tenant", "error": str(exc)},

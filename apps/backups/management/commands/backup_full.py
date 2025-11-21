@@ -11,7 +11,8 @@ from apps.backups.utils import (
     create_backup_directory,
     generate_backup_filename,
     execute_pg_dump,
-    get_backup_config
+    get_backup_config,
+    subir_backup_a_s3
 )
 
 
@@ -71,12 +72,40 @@ class Command(BaseCommand):
             backup_record.mensaje = message
             backup_record.tamaño_bytes = file_size
             backup_record.duracion_segundos = duration
+            
+            # Subir a S3 (obligatorio)
+            from django.conf import settings
+            bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', None)
+            if bucket_name:
+                self.stdout.write('\n☁️  Subiendo a AWS S3...')
+                s3_url = subir_backup_a_s3(str(output_file), tenant_name='full')
+                if s3_url:
+                    backup_record.archivo = s3_url  # Guardar URL de S3
+                    self.stdout.write(self.style.SUCCESS('   ✅ Subido exitosamente a S3'))
+                    
+                    # Eliminar archivo local después de subir a S3
+                    if output_file.exists():
+                        output_file.unlink()
+                        self.stdout.write(self.style.SUCCESS('   🗑️  Archivo local eliminado'))
+                else:
+                    self.stdout.write(self.style.ERROR('   ❌ No se pudo subir a S3'))
+                    backup_record.estado = 'error'
+                    backup_record.mensaje = 'Error al subir a S3'
+            else:
+                self.stdout.write(self.style.ERROR('   ❌ AWS_STORAGE_BUCKET_NAME no configurado'))
+                backup_record.estado = 'error'
+                backup_record.mensaje = 'AWS_STORAGE_BUCKET_NAME no configurado'
+            
             backup_record.save(using='default')
             
-            self.stdout.write(self.style.SUCCESS(f'\n✅ {message}'))
-            self.stdout.write(self.style.SUCCESS(f'⏱️  Duración: {duration} segundos'))
-            self.stdout.write(self.style.SUCCESS(f'📦 Archivo: {output_file}'))
-            self.stdout.write(self.style.SUCCESS('\n' + '=' * 60))
+            if backup_record.estado == 'ok':
+                self.stdout.write(self.style.SUCCESS(f'\n✅ {message}'))
+                self.stdout.write(self.style.SUCCESS(f'⏱️  Duración: {duration} segundos'))
+                self.stdout.write(self.style.SUCCESS(f'☁️  Almacenado en: S3'))
+                self.stdout.write(self.style.SUCCESS('\n' + '=' * 60))
+            else:
+                self.stdout.write(self.style.ERROR(f'\n❌ Error al procesar backup'))
+                self.stdout.write(self.style.ERROR('\n' + '=' * 60))
         else:
             with connection.cursor() as cursor:
                 cursor.execute("SET search_path TO public;")
