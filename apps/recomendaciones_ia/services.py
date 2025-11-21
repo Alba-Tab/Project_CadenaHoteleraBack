@@ -1,6 +1,3 @@
-"""
-Servicios para generar y gestionar recomendaciones de precios
-"""
 from decimal import Decimal
 from django.db import transaction
 from django.utils import timezone
@@ -10,71 +7,53 @@ from .ml_model import ModeloRecomendacionPrecios
 
 
 class ServicioRecomendaciones:
-    """
-    Servicio para gestionar el ciclo de vida de las recomendaciones
-    """
-    
+
     def __init__(self):
         self.modelo = ModeloRecomendacionPrecios()
-    
+
     def generar_recomendaciones(self, usuario=None):
-        """
-        Genera recomendaciones para todas las habitaciones del tenant actual
-        
-        Args:
-            usuario: Usuario que solicita las recomendaciones (opcional)
-        
-        Returns:
-            dict con resultados de la generación
-        """
-        # Obtener tipos únicos de habitaciones
-        tipos_habitacion = Habitacion.objects.values_list('tipo', flat=True).distinct()
-        
-        recomendaciones_creadas = []
+
+        hotel_id = usuario.hotel_id  
+        resultados = []
         errores = []
-        
-        for tipo in tipos_habitacion:
+
+        tipos = Habitacion.objects.filter(hotel_id=hotel_id)\
+                .values_list('tipo', flat=True).distinct()
+
+        for tipo in tipos:
             try:
-                # Obtener habitaciones de este tipo
-                habitaciones = Habitacion.objects.filter(tipo=tipo)
-                
+                habitaciones = Habitacion.objects.filter(hotel_id=hotel_id, tipo=tipo)
+
                 if not habitaciones.exists():
                     continue
-                
-                # Predecir precio para este tipo
-                precio_sugerido, confianza, motivo = self.modelo.predecir_precio(tipo)
-                
-                # Crear recomendación para cada habitación de este tipo
-                for habitacion in habitaciones:
-                    # Eliminar recomendaciones anteriores no aceptadas
+
+                precio_sugerido, confianza, motivo = \
+                    self.modelo.predecir_precio(hotel_id, tipo)
+
+                for hab in habitaciones:
                     RecomendacionPrecio.objects.filter(
-                        habitacion=habitacion,
+                        habitacion=hab,
                         aceptada=False
                     ).delete()
-                    
-                    # Crear nueva recomendación
-                    recomendacion = RecomendacionPrecio.objects.create(
-                        habitacion=habitacion,
-                        tarifa_actual=habitacion.precio_noche,
+                    rec = RecomendacionPrecio.objects.create(
+                        habitacion=hab,
+                        tarifa_actual=hab.precio_noche,
                         tarifa_sugerida=precio_sugerido,
                         confianza=Decimal(str(confianza)),
                         motivo=motivo
                     )
-                    
-                    recomendaciones_creadas.append(recomendacion)
-            
+
+                    resultados.append(rec)
+
             except Exception as e:
-                errores.append({
-                    'tipo': tipo,
-                    'error': str(e)
-                })
-        
+                errores.append({'tipo': tipo, 'error': str(e)})
+
         return {
-            'total_generadas': len(recomendaciones_creadas),
-            'tipos_procesados': len(tipos_habitacion),
-            'errores': errores,
-            'recomendaciones': recomendaciones_creadas
+            'total_generadas': len(resultados),
+            'errores': errores
         }
+
+    # ---------- RESTO DEL SERVICIO QUEDA IGUAL (aceptar, rechazar, historial) ----------
     
     @transaction.atomic
     def aceptar_recomendaciones(self, ids=None, todas=False, usuario=None):
