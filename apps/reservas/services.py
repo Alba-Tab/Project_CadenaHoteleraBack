@@ -40,28 +40,18 @@ def procesar_reserva(data):
 
     # 🔔 Enviar notificación push al huésped si tiene token FCM
     huesped = reserva.huesped
-    logger.info(f"📋 Procesando notificación para reserva #{reserva.id}")
-
-    if not huesped:
-        logger.warning(f"⚠️ Reserva #{reserva.id} no tiene huésped asignado")
-    elif not huesped.fcm_token:
-        logger.warning(f"⚠️ Huésped {huesped.username} no tiene token FCM registrado")
-    else:
-        logger.info(f"📱 Huésped {huesped.username} tiene token FCM: {huesped.fcm_token[:20]}...")
+    if huesped and huesped.fcm_token:
         try:
-            resultado = NotificationService.send_reserva_notification(
+            NotificationService.send_reserva_notification(
                 usuario=huesped,
                 reserva_id=reserva.id,
                 mensaje=f"Tu reserva en {reserva.hotel.nombre} del {fecha_entrada} al {fecha_salida} ha sido confirmada",
                 notification_type='confirmacion'
             )
-            if resultado:
-                logger.info(f"✅ Notificación enviada exitosamente al huésped {huesped.username}")
-            else:
-                logger.error(f"❌ Falló el envío de notificación al huésped {huesped.username}")
+            logger.info(f"✅ Notificación enviada al huésped {huesped.username}")
         except Exception as e:
             # No romper la transacción si falla la notificación
-            logger.error(f"⚠️ Error enviando notificación: {str(e)} | Tipo: {type(e).__name__}")
+            logger.error(f"⚠️ Error enviando notificación: {str(e)}")
 
     return reserva
 
