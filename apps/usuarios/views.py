@@ -8,9 +8,12 @@ from rest_framework_simplejwt.exceptions import TokenError
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import Group, Permission
 from django.utils import timezone
+from django.db import transaction
+from django_tenants.utils import schema_context
 from .models import User
 from .serializers import UserSerializer, RoleSerializer, PermissionSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from apps.suscripciones.models import UsoTenant
 
 class PermissionViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -70,6 +73,7 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by('username')
     serializer_class = UserSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+    
     def get_permissions(self):
         """
         Permisos diferentes según la acción
@@ -79,6 +83,45 @@ class UserViewSet(viewsets.ModelViewSet):
         else:
             permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]
+    
+    @transaction.atomic
+    def perform_create(self, serializer):
+        """
+        Crea un usuario y actualiza el contador del tenant
+        """
+        # Guardar el usuario
+        serializer.save()
+        
+        # Actualizar contador si hay tenant
+        if hasattr(self.request, 'tenant') and self.request.tenant:
+            total_usuarios = User.objects.count()
+            
+            with schema_context("public"):
+                uso, _ = UsoTenant.objects.select_for_update().get_or_create(tenant=self.request.tenant)
+                uso.usuarios = total_usuarios
+                uso.ultima_actualizacion = timezone.now()
+                uso.save()
+    
+    @transaction.atomic
+    def perform_destroy(self, instance):
+        """
+        Elimina un usuario y actualiza el contador del tenant
+        """
+        # Guardar referencia al tenant antes de eliminar
+        tenant = self.request.tenant if hasattr(self.request, 'tenant') else None
+        
+        # Eliminar el usuario
+        instance.delete()
+        
+        # Actualizar contador si hay tenant
+        if tenant:
+            total_usuarios = User.objects.count()
+            
+            with schema_context("public"):
+                uso = UsoTenant.objects.select_for_update().get(tenant=tenant)
+                uso.usuarios = total_usuarios
+                uso.ultima_actualizacion = timezone.now()
+                uso.save()
 
     # ✨ MÉTODOS DE AUTENTICACIÓN JWT
 
@@ -137,9 +180,10 @@ class UserViewSet(viewsets.ModelViewSet):
         }, status=status.HTTP_401_UNAUTHORIZED)
 
     @action(detail=False, methods=['post'])
+    @transaction.atomic
     def register(self, request):
         """
-        Registro de nuevo usuario
+        Registro de nuevo usuario con JWT
         POST /api/usuarios/register/
         Body (multipart/form-data):
             - username: str (requerido)
@@ -154,7 +198,7 @@ class UserViewSet(viewsets.ModelViewSet):
         email = request.data.get('email')
         first_name = request.data.get('first_name', '')
         last_name = request.data.get('last_name', '')
-        photo = request.FILES.get('photo')  # ← Obtener archivo de foto
+        photo = request.FILES.get('photo')
 
         # Validaciones básicas
         if not username or not password:
@@ -207,7 +251,17 @@ class UserViewSet(viewsets.ModelViewSet):
             huesped_role = Group.objects.get(name='Huesped')
             user.groups.add(huesped_role)
         except Group.DoesNotExist:
-            pass  # Si no existe el rol, continúa sin asignarlo
+            pass
+
+        # Actualizar contador de usuarios del tenant
+        if hasattr(request, 'tenant') and request.tenant:
+            total_usuarios = User.objects.count()
+            
+            with schema_context("public"):
+                uso, _ = UsoTenant.objects.select_for_update().get_or_create(tenant=request.tenant)
+                uso.usuarios = total_usuarios
+                uso.ultima_actualizacion = timezone.now()
+                uso.save()
 
         # Generar tokens JWT automáticamente
         refresh = RefreshToken.for_user(user)

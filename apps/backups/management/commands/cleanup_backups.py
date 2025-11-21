@@ -6,7 +6,8 @@ from apps.backups.utils import (
     create_backup_directory,
     cleanup_old_backups,
     get_backup_config,
-    get_backup_stats
+    get_backup_stats,
+    eliminar_backup_de_s3
 )
 
 
@@ -71,10 +72,34 @@ class Command(BaseCommand):
             self.stdout.write(f'   Espacio usado: {stats_before["total_size_mb"]:.2f} MB')
             
             if not dry_run:
-                # Limpiar archivos antiguos
-                deleted, freed = cleanup_old_backups(dir_path, retention_days)
-                total_deleted += deleted
-                total_freed += freed
+                # Eliminar de S3 (donde se guardan los backups ahora)
+                from apps.backups.models import Backup
+                from django.conf import settings
+                from datetime import datetime, timedelta
+                
+                if getattr(settings, 'AWS_STORAGE_BUCKET_NAME', None):
+                    self.stdout.write('   ☁️  Eliminando backups antiguos de S3...')
+                    
+                    cutoff_date = datetime.now() - timedelta(days=retention_days)
+                    backups_s3 = Backup.objects.filter(
+                        archivo__startswith='https://'
+                    )
+                    
+                    deleted_s3 = 0
+                    for backup in backups_s3:
+                        # Verificar si es antiguo
+                        if backup.fecha.replace(tzinfo=None) < cutoff_date:
+                            if eliminar_backup_de_s3(backup.archivo):
+                                backup.delete()
+                                deleted_s3 += 1
+                                self.stdout.write(self.style.SUCCESS(f'   ✅ Eliminado de S3: {backup.archivo.split("/")[-1]}'))
+                    
+                    if deleted_s3 > 0:
+                        self.stdout.write(self.style.SUCCESS(f'   ✅ Eliminados de S3: {deleted_s3} archivos'))
+                    else:
+                        self.stdout.write(self.style.SUCCESS('   ℹ️  No hay backups antiguos en S3'))
+                
+                total_deleted += deleted_s3
                 
                 if deleted > 0:
                     self.stdout.write(self.style.SUCCESS(f'   ✅ Eliminados: {deleted} archivos'))
