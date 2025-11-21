@@ -4,7 +4,7 @@ from datetime import datetime, date, timedelta
 from django.utils.timezone import localdate
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 
 from .models import Habitacion
@@ -43,7 +43,8 @@ class HabitacionViewSet(viewsets.ModelViewSet):
         detail=False,
         methods=['get'],
         url_path='por-hotel',
-        serializer_class=HabitacionSerializer
+        serializer_class=HabitacionSerializer,
+        permission_classes=[AllowAny]
     )
     def por_hotel(self, request):
         """
