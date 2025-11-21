@@ -38,21 +38,6 @@ def procesar_reserva(data):
     habitacion.estado = Habitacion.RESERVADA
     habitacion.save()
 
-    # 🔔 Enviar notificación push al huésped si tiene token FCM
-    huesped = reserva.huesped
-    if huesped and huesped.fcm_token:
-        try:
-            NotificationService.send_reserva_notification(
-                usuario=huesped,
-                reserva_id=reserva.id,
-                mensaje=f"Tu reserva en {reserva.hotel.nombre} del {fecha_entrada} al {fecha_salida} ha sido confirmada",
-                notification_type='confirmacion'
-            )
-            logger.info(f"✅ Notificación enviada al huésped {huesped.username}")
-        except Exception as e:
-            # No romper la transacción si falla la notificación
-            logger.error(f"⚠️ Error enviando notificación: {str(e)}")
-
     return reserva
 
 
