@@ -1,3 +1,5 @@
+default_app_config = 'core.apps.CoreConfig'
+
 from django.apps import apps as django_apps
 from django.db.models.signals import post_migrate
 from django.dispatch import receiver
@@ -6,7 +8,7 @@ from django.dispatch import receiver
 def register_audit_models_after_migrate(sender, **kwargs):
 
     if not django_apps.ready:
-        return 
+        return
 
     try:
         from django_tenants.utils import schema_context, get_tenant_model
