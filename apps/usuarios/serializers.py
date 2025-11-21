@@ -67,11 +67,14 @@ class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     photo = serializers.ImageField(required=False, allow_null=True)
     photo_url = serializers.SerializerMethodField(read_only=True)
+    hotel_id = serializers.IntegerField(source='hotel.id', read_only=True, allow_null=True)
+    hotel_nombre = serializers.CharField(source='hotel.nombre', read_only=True, allow_null=True)
 
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'groups', 'group_ids', 'password',
-                  'first_name', 'last_name', 'photo', 'photo_url', 'fcm_token']
+                  'first_name', 'last_name', 'photo', 'photo_url', 'fcm_token',
+                  'hotel', 'hotel_id', 'hotel_nombre']
 
     def get_photo_url(self, obj):
         if obj.photo:

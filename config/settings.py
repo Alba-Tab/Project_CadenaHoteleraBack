@@ -62,8 +62,12 @@ TENANT_APPS = [
 
 
 INSTALLED_APPS = list(dict.fromkeys(SHARED_APPS + TENANT_APPS))
+
+# ============================================================================
+# CONFIGURACIÓN MULTITENANT basado en headers
+# ============================================================================
 TENANT_MODEL = "core.Tenant"
-TENANT_DOMAIN_MODEL = "core.Domain"
+# TENANT_DOMAIN_MODEL eliminado - ya no se usa enfoque de dominios
 
 DATABASE_ROUTERS = ("django_tenants.routers.TenantSyncRouter",)
 
@@ -77,10 +81,12 @@ EMAIL_HOST_PASSWORD = env.str('EMAIL_HOST_PASSWORD', default='')#type:ignore
 DEFAULT_FROM_EMAIL = env.str('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)#type:ignore
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
-    "django_tenants.middleware.main.TenantMainMiddleware",
-    'apps.suscripciones.middleware.SuscripcionMiddleware',  # 🔹 Middleware de suscripciones
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    
+    "config.middleware.tenant_header_middleware.TenantHeaderMiddleware",
+    'apps.suscripciones.middleware.SuscripcionMiddleware',
+    
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -88,22 +94,44 @@ MIDDLEWARE = [
     "config.middleware.middleware_user_audit.JWTActorMiddleware",
     "auditlog.middleware.AuditlogMiddleware",
     "config.middleware.middleware_auditlog.TenantAuditLogMiddleware",
-    "config.middleware.middleware_force_urlconf.ForcetenantUrlconfMiddleware",
+    
+    # Otros
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-#reorganize los middelewares para que el de JWTActorMiddleware esté antes que AuditlogMiddleware
 
-ROOT_URLCONF = "config.urls_public"
-PUBLIC_SCHEMA_URLCONF = "config.urls_public"
-TENANT_URLCONF = "config.urls_tenant"
-TENANT_BASE_DOMAIN = env.str("TENANT_BASE_DOMAIN", default="localhost") #type:ignore
+# ============================================================================
+# CONFIGURACIÓN DE URLs
+# ============================================================================
+ROOT_URLCONF = "config.urls"  # Archivo principal que delega a django-tenants
+PUBLIC_SCHEMA_URLCONF = "config.urls_public"  # URLs para schema 'public'
+TENANT_URLCONF = "config.urls_tenant"  # URLs para schemas de tenants
 
 AUTH_USER_MODEL = "usuarios.User"
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'x-tenant',  # 🏨 Header para identificar el tenant
+]
 
+#-------------------------------------------------------------------------------------------------------------------
+
+#-----------------------Arreglos de cors para la nube---------------------------------------
+CORS_ALLOW_HEADERS = ['*']  # Permitir todas las cabeceras
+CORS_ALLOW_METHODS = ['*']  # Permitir todos los métodos HTTP
+CORS_EXPOSE_HEADERS = ['*']  # Exponer todas las cabeceras al cliente
+CORS_PREFLIGHT_MAX_AGE = 86400  # Cache de preflight por 24 horas
+#-------------------------------------------------------------------------------------------------------------------
 # ✨ CONFIGURACIÓN DE JWT
 from datetime import timedelta
 
@@ -148,6 +176,34 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+
+# ============================================================================
+# CONFIGURACIÓN DE SEGURIDAD CSRF PARA CORS
+# ============================================================================
+# Orígenes confiables para CSRF
+CSRF_TRUSTED_ORIGINS = [    
+    'https://albadev.me',
+    'http://albadev.me',
+    'https://*.albadev.me',  # Todos los subdominios de albadev.me
+    'http://*.albadev.me',
+    'http://hoteles-front.s3-website.us-east-2.amazonaws.com',
+    'https://jgyqzmxg7p.us-east-2.awsapprunner.com',
+    'http://localhost:4200',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
+# Permitir cookies cross-domain
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = False  # Cambiar a True en producción con HTTPS
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SECURE = False  # Cambiar a True en producción con HTTPS
+
+
+
+# ============================================================================
+# CONFIGURACIÓN DE SEGURIDAD CSRF PARA CORS
+# ============================================================================
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -173,10 +229,6 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
-
-# Media files (archivos subidos)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

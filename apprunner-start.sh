@@ -1,21 +1,30 @@
 #!/bin/bash
 set -e
 
-# 1. AGREGAR LA CARPETA ACTUAL AL PATH DE PYTHON (CRÍTICO)
+# Configurar PYTHONPATH
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 
 echo "=== DIAGNÓSTICO ==="
-echo "Directorio actual:"
-pwd
-echo "Listando carpetas clave (deberíamos ver 'django' aquí):"
-ls -d django || echo "OJO: No veo la carpeta django"
+echo "Directorio actual: $(pwd)"
+echo "Python version: $(python3 --version)"
 
-# 2. Migraciones
+# Migraciones
 echo "=== EJECUTANDO MIGRACIONES ==="
 python3 manage.py migrate_schemas --shared
 python3 manage.py migrate_schemas --tenant
 
-# 3. Arrancar Gunicorn
+# Crear tenant público automáticamente
+echo "=== CONFIGURANDO TENANT PÚBLICO ==="
+python3 create_public_tenant.py || echo "Warning: No se pudo crear tenant público"
+
+# Arrancar Gunicorn
 echo "=== INICIANDO SERVIDOR ==="
-# Usamos python3 -m para asegurarnos de que usa el gunicorn local
-python3 -m gunicorn --bind 0.0.0.0:${PORT:-8000} config.wsgi:application
+exec python3 -m gunicorn \
+    --bind 0.0.0.0:${PORT:-8000} \
+    --workers 2 \
+    --threads 4 \
+    --timeout 120 \
+    --access-logfile - \
+    --error-logfile - \
+    --log-level info \
+    config.wsgi:application
