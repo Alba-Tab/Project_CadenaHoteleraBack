@@ -17,22 +17,22 @@ class NotificationService:
         """Inicializar Firebase Admin SDK - solo una vez"""
         print("🔥 _initialize_firebase LLAMADO")
         logger.info("🔥 _initialize_firebase LLAMADO")
-        
+
         if not cls._initialized and not firebase_admin._apps:
             try:
                 print("🔥 Intentando inicializar Firebase...")
                 logger.info("🔥 Intentando inicializar Firebase...")
-                
+
                 # Opción 1: Variable de entorno con JSON (producción AWS)
                 if settings.FIREBASE_CREDENTIALS_JSON:
                     import json
                     print("🔥 Usando variable de entorno FIREBASE_CREDENTIALS_JSON")
                     logger.info("🔥 Usando variable de entorno FIREBASE_CREDENTIALS_JSON")
-                    
+
                     cred_dict = json.loads(settings.FIREBASE_CREDENTIALS_JSON)
                     print(f"🔥 JSON parseado correctamente. Project ID: {cred_dict.get('project_id', 'N/A')}")
                     logger.info(f"🔥 JSON parseado correctamente. Project ID: {cred_dict.get('project_id', 'N/A')}")
-                    
+
                     cred = credentials.Certificate(cred_dict)
                     print("✅ Firebase credential creado desde variable de entorno")
                     logger.info("✅ Firebase credential creado desde variable de entorno")
@@ -40,7 +40,7 @@ class NotificationService:
                 else:
                     print("🔥 Usando archivo local de credenciales")
                     logger.info("🔥 Usando archivo local de credenciales")
-                    
+
                     cred_path = settings.FIREBASE_CREDENTIAL_PATH
                     if not os.path.exists(cred_path):
                         print(f"❌ Archivo no encontrado: {cred_path}")
@@ -53,7 +53,7 @@ class NotificationService:
                 # Inicializar Firebase
                 print("🔥 Llamando a firebase_admin.initialize_app()...")
                 logger.info("🔥 Llamando a firebase_admin.initialize_app()...")
-                
+
                 firebase_admin.initialize_app(cred)
 
                 cls._initialized = True

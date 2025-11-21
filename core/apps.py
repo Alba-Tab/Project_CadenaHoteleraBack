@@ -12,13 +12,13 @@ class CoreConfig(AppConfig):
         """Ejecutar código cuando Django inicie"""
         print("🚀 CORE APP READY - INICIANDO FIREBASE...")
         logger.info("🚀 CORE APP READY - INICIANDO FIREBASE...")
-        
+
         # Importar aquí para evitar circular imports
         from core.notifications_service import NotificationService
-        
+
         # Inicializar Firebase en el arranque
         success = NotificationService._initialize_firebase()
-        
+
         if success:
             print("✅ FIREBASE INICIALIZADO CORRECTAMENTE EN EL ARRANQUE")
             logger.info("✅ FIREBASE INICIALIZADO CORRECTAMENTE EN EL ARRANQUE")
