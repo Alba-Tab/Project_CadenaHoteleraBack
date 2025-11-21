@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class ReservaViewSet(viewsets.ModelViewSet):
     serializer_class = ReservaSerializer
     permission_classes = [AllowAny]
-    
+
     def get_queryset(self):
         """Optimizado con select_related y prefetch_related para evitar N+1 queries"""
         return Reserva.objects.select_related(
@@ -41,38 +41,56 @@ class ReservaViewSet(viewsets.ModelViewSet):
         serializer.instance = reserva
         print(f"⏱️ RESERVA CREADA: ID={reserva.id}")
 
-        # 🔔 ENVIAR NOTIFICACIÓN DIRECTAMENTE (SIN THREAD) - GARANTIZADO
+        # 🔔 CAPTURAR TODOS LOS DATOS DE BD ANTES DE NOTIFICACIÓN
+        # Esto previene pérdida de conexión en RDS Aurora con multi-tenancy
         huesped = reserva.huesped
 
         if huesped and huesped.fcm_token:
-            print(f"✅ ENVIANDO NOTIFICACION DIRECTA al usuario {huesped.username}")
-            try:
-                # Guardar info necesaria ANTES de cualquier thread
-                token = huesped.fcm_token
-                username = huesped.username
-                hotel_nombre = reserva.hotel.nombre
-                fecha_entrada = str(reserva.fecha_entrada)
-                fecha_salida = str(reserva.fecha_salida)
-                reserva_id = reserva.id
+            # ✅ CRÍTICO: Extraer TODOS los datos de la BD AHORA
+            # antes de que el middleware resetee el schema
+            token = str(huesped.fcm_token)  # Convertir a string inmutable
+            username = str(huesped.username)
+            hotel_nombre = str(reserva.hotel.nombre)
+            fecha_entrada = str(reserva.fecha_entrada)
+            fecha_salida = str(reserva.fecha_salida)
+            reserva_id = int(reserva.id)
+            timestamp = str(timezone.now())
 
-                # Enviar DIRECTAMENTE - sin thread
-                NotificationService.send_to_token(
-                    token=token,
-                    title='Reserva Confirmada',
-                    body=f"Tu reserva en {hotel_nombre} del {fecha_entrada} al {fecha_salida} ha sido confirmada",
-                    data={
-                        'type': 'reserva',
-                        'notification_type': 'confirmacion',
-                        'reserva_id': str(reserva_id),
-                        'timestamp': str(timezone.now())
-                    }
-                )
-                print(f"✅ NOTIFICACION ENVIADA")
-            except Exception as e:
-                print(f"❌ ERROR ENVIANDO: {str(e)}")
-                logger.error(f"Error: {str(e)}")
+            print(f"📱 Datos capturados para notificación: usuario={username}, token={token[:20]}...")
+            logger.info(f"📱 Preparando notificación para usuario {username}")
+
+            # 🔥 ENVIAR EN THREAD SEPARADO - No depende de la conexión BD
+            def enviar_notificacion():
+                try:
+                    print(f"📤 [THREAD] Enviando notificación a {username}")
+                    resultado = NotificationService.send_to_token(
+                        token=token,
+                        title='Reserva Confirmada',
+                        body=f"Tu reserva en {hotel_nombre} del {fecha_entrada} al {fecha_salida} ha sido confirmada",
+                        data={
+                            'type': 'reserva',
+                            'notification_type': 'confirmacion',
+                            'reserva_id': str(reserva_id),
+                            'timestamp': timestamp
+                        }
+                    )
+                    if resultado:
+                        print(f"✅ [THREAD] Notificación enviada exitosamente")
+                        logger.info(f"✅ Notificación enviada a {username}")
+                    else:
+                        print(f"⚠️ [THREAD] Fallo al enviar notificación")
+                        logger.warning(f"⚠️ Fallo al enviar notificación a {username}")
+                except Exception as e:
+                    print(f"❌ [THREAD] Error: {str(e)}")
+                    logger.error(f"❌ Error en thread de notificación: {str(e)}")
+
+            # Iniciar thread daemon (se cierra automáticamente)
+            thread = threading.Thread(target=enviar_notificacion, daemon=True)
+            thread.start()
+            print(f"✅ Thread de notificación iniciado (no bloqueante)")
         else:
-            print(f"❌ NO HAY TOKEN FCM")
+            print(f"⚠️ Usuario sin FCM token - notificación omitida")
+            logger.warning(f"⚠️ Usuario {huesped.username if huesped else 'N/A'} sin FCM token")
 
     def perform_update(self, serializer):
         data = serializer.validated_data

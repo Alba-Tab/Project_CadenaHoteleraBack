@@ -21,8 +21,9 @@ python3 create_public_tenant.py || echo "Warning: No se pudo crear tenant públi
 echo "=== INICIANDO SERVIDOR ==="
 exec python3 -m gunicorn \
     --bind 0.0.0.0:${PORT:-8000} \
+    --worker-class gevent \
     --workers 2 \
-    --threads 4 \
+    --worker-connections 1000 \
     --timeout 120 \
     --access-logfile - \
     --error-logfile - \
