@@ -17,24 +17,30 @@ class NotificationService:
         """Inicializar Firebase Admin SDK - solo una vez"""
         if not cls._initialized and not firebase_admin._apps:
             try:
-                # Ruta del archivo de credenciales
-                cred_path = settings.FIREBASE_CREDENTIAL_PATH
-
-                # Verificar que existe el archivo
-                if not os.path.exists(cred_path):
-                    logger.error("Archivo firebase-credentials.json no encontrado")
-                    return False
+                # Opción 1: Variable de entorno con JSON (producción AWS)
+                if settings.FIREBASE_CREDENTIALS_JSON:
+                    import json
+                    cred_dict = json.loads(settings.FIREBASE_CREDENTIALS_JSON)
+                    cred = credentials.Certificate(cred_dict)
+                    logger.info("Firebase inicializado con variable de entorno")
+                # Opción 2: Archivo local (desarrollo)
+                else:
+                    cred_path = settings.FIREBASE_CREDENTIAL_PATH
+                    if not os.path.exists(cred_path):
+                        logger.error("Archivo firebase-credentials.json no encontrado")
+                        return False
+                    cred = credentials.Certificate(cred_path)
+                    logger.info("Firebase inicializado con archivo local")
 
                 # Inicializar Firebase
-                cred = credentials.Certificate(cred_path)
                 firebase_admin.initialize_app(cred)
 
                 cls._initialized = True
-                logger.info("Firebase Admin SDK inicializado correctamente")
+                logger.info("✅ Firebase Admin SDK inicializado correctamente")
                 return True
 
             except Exception as e:
-                logger.error(f"Error inicializando Firebase: {str(e)}")
+                logger.error(f"❌ Error inicializando Firebase: {str(e)}")
                 return False
 
         return True
