@@ -2,7 +2,6 @@ import firebase_admin
 from firebase_admin import credentials, messaging
 import logging
 import os
-import json
 from django.conf import settings
 from django.utils import timezone
 
@@ -18,48 +17,24 @@ class NotificationService:
         """Inicializar Firebase Admin SDK - solo una vez"""
         if not cls._initialized and not firebase_admin._apps:
             try:
-                # Intentar primero con variable de entorno (producción)
-                if hasattr(settings, 'FIREBASE_CREDENTIALS_JSON') and settings.FIREBASE_CREDENTIALS_JSON:
-                    logger.info("🔧 Intentando cargar credenciales desde variable de entorno FIREBASE_CREDENTIALS_JSON")
-                    cred_dict = json.loads(settings.FIREBASE_CREDENTIALS_JSON)
+                # Ruta del archivo de credenciales
+                cred_path = settings.FIREBASE_CREDENTIAL_PATH
 
-                    # Verificar que tenga los campos necesarios
-                    required_fields = ['type', 'project_id', 'private_key', 'client_email']
-                    missing_fields = [f for f in required_fields if f not in cred_dict]
-                    if missing_fields:
-                        logger.error(f"❌ Faltan campos en credenciales Firebase: {missing_fields}")
-                        return False
-
-                    cred = credentials.Certificate(cred_dict)
-                    logger.info(f"✅ Usando credenciales Firebase desde variable de entorno | Project: {cred_dict.get('project_id')}")
-
-                # Si no, usar archivo local (desarrollo)
-                elif hasattr(settings, 'FIREBASE_CREDENTIAL_PATH'):
-                    cred_path = settings.FIREBASE_CREDENTIAL_PATH
-                    logger.info(f"🔧 Intentando cargar credenciales desde archivo: {cred_path}")
-
-                    if not os.path.exists(cred_path):
-                        logger.error(f"❌ Archivo firebase-credentials.json no encontrado en: {cred_path}")
-                        return False
-
-                    cred = credentials.Certificate(cred_path)
-                    logger.info(f"✅ Usando credenciales Firebase desde archivo local")
-
-                else:
-                    logger.error("❌ No se encontraron credenciales de Firebase (ni variable de entorno ni archivo)")
+                # Verificar que existe el archivo
+                if not os.path.exists(cred_path):
+                    logger.error("Archivo firebase-credentials.json no encontrado")
                     return False
 
                 # Inicializar Firebase
+                cred = credentials.Certificate(cred_path)
                 firebase_admin.initialize_app(cred)
+
                 cls._initialized = True
-                logger.info("🎉 Firebase Admin SDK inicializado correctamente")
+                logger.info("Firebase Admin SDK inicializado correctamente")
                 return True
 
-            except json.JSONDecodeError as e:
-                logger.error(f"❌ Error parseando JSON de credenciales Firebase: {str(e)}")
-                return False
             except Exception as e:
-                logger.error(f"❌ Error inicializando Firebase: {str(e)} | Tipo: {type(e).__name__}")
+                logger.error(f"Error inicializando Firebase: {str(e)}")
                 return False
 
         return True
@@ -79,11 +54,6 @@ class NotificationService:
             bool: True si se envió correctamente, False si falló
         """
         if not cls._initialize_firebase():
-            logger.error("Firebase no está inicializado")
-            return False
-
-        if not token:
-            logger.error("Token FCM vacío o None")
             return False
 
         try:
@@ -104,17 +74,14 @@ class NotificationService:
 
             # Enviar mensaje
             response = messaging.send(message)
-            logger.info(f"✅ Notificación enviada exitosamente. ID: {response} | Token: {token[:20]}...")
+            logger.info(f"Notificación enviada exitosamente. ID: {response}")
             return True
 
         except messaging.UnregisteredError:
-            logger.warning(f"❌ Token FCM inválido o expirado: {token[:20]}...")
-            return False
-        except firebase_admin.exceptions.InvalidArgumentError as e:
-            logger.error(f"❌ Argumento inválido en Firebase: {str(e)} | Token: {token[:20]}...")
+            logger.warning(f"Token FCM inválido o expirado: {token}")
             return False
         except Exception as e:
-            logger.error(f"❌ Error enviando notificación: {str(e)} | Token: {token[:20]}... | Tipo: {type(e).__name__}")
+            logger.error(f"Error enviando notificación: {str(e)}")
             return False
 
     @classmethod
@@ -132,10 +99,10 @@ class NotificationService:
             bool: True si se envió correctamente, False si falló
         """
         if not hasattr(usuario, 'fcm_token') or not usuario.fcm_token:
-            logger.warning(f"⚠️ Usuario {usuario.username} no tiene token FCM registrado")
+            logger.warning(f"Usuario {usuario.username} no tiene token FCM")
             return False
 
-        logger.info(f"📤 Enviando notificación a usuario: {usuario.username} | Token: {usuario.fcm_token[:20]}...")
+        logger.info(f"✅ Usuario {usuario.username} tiene token FCM: {usuario.fcm_token[:20]}...")
 
         return cls.send_to_token(
             token=usuario.fcm_token,
