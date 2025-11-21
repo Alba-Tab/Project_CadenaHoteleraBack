@@ -44,11 +44,17 @@ class CheckoutAPIView(APIView):
 
 class CheckInListAPIView(ListAPIView):
 
-    queryset = CheckInOut.objects.all().order_by('-fecha_checkin')
     serializer_class = CheckInCreateSerializer
+    
+    def get_queryset(self):
+        """Optimizado con select_related para evitar N+1 queries"""
+        return CheckInOut.objects.select_related('reserva', 'reserva__huesped', 'reserva__hotel', 'reserva__habitacion').order_by('-fecha_checkin')
 
 
 class CheckInDetailAPIView(RetrieveAPIView):
 
-    queryset = CheckInOut.objects.all()
     serializer_class = CheckInCreateSerializer
+    
+    def get_queryset(self):
+        """Optimizado con select_related para evitar N+1 queries"""
+        return CheckInOut.objects.select_related('reserva', 'reserva__huesped', 'reserva__hotel', 'reserva__habitacion').all()

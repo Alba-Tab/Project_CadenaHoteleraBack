@@ -70,9 +70,12 @@ class UserViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gestionar usuarios + autenticación JWT
     """
-    queryset = User.objects.all().order_by('username')
     serializer_class = UserSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+    
+    def get_queryset(self):
+        """Optimizado con select_related y prefetch_related"""
+        return User.objects.select_related('hotel').prefetch_related('groups', 'groups__permissions').order_by('username')
     
     def get_permissions(self):
         """

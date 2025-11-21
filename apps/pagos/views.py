@@ -62,8 +62,15 @@ class PagoListAPIView(ListAPIView):
     GET /api/pagos/list/
     Retorna todos los pagos realizados.
     """
-    queryset = Pago.objects.all().order_by('-fecha_pago')
     serializer_class = PagoCreateSerializer
+    
+    def get_queryset(self):
+        """Optimizado con select_related para evitar N+1 queries"""
+        return Pago.objects.select_related(
+            'folio_estancia',
+            'folio_estancia__reserva',
+            'folio_estancia__huesped'
+        ).order_by('-fecha_pago')
 
 
 class PagoDetailAPIView(RetrieveAPIView):
@@ -71,5 +78,12 @@ class PagoDetailAPIView(RetrieveAPIView):
     GET /api/pagos/<id>/
     Retorna el detalle de un pago específico.
     """
-    queryset = Pago.objects.all()
     serializer_class = PagoCreateSerializer
+    
+    def get_queryset(self):
+        """Optimizado con select_related para evitar N+1 queries"""
+        return Pago.objects.select_related(
+            'folio_estancia',
+            'folio_estancia__reserva',
+            'folio_estancia__huesped'
+        ).all()

@@ -86,10 +86,6 @@ class TenantHeaderMiddleware:
             # Usar URLconf de tenant
             request.urlconf = 'config.urls_tenant'
             
-            # Log para debugging (opcional - remover en producción)
-            print(f"✅ Schema cambiado a: {tenant.schema_name}")
-            print(f"✅ URLconf cambiado a: config.urls_tenant")
-            
         except Exception as e:
             return JsonResponse({
                 'error': 'Error al cambiar de schema',

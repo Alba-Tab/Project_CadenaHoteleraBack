@@ -18,6 +18,12 @@ DATABASES = {
         "PASSWORD": env("PGPASSWORD", default="admin"),#type:ignore
         "HOST": env("PGHOST", default="127.0.0.1"),#type:ignore
         "PORT": env("PGPORT", default="5433"),#type:ignore
+        # 🚀 OPTIMIZACIONES DE RENDIMIENTO
+        "CONN_MAX_AGE": 600,  # Mantener conexiones por 10 minutos
+        "OPTIONS": {
+            "connect_timeout": 10,
+            "options": "-c statement_timeout=30000"  # Timeout de 30 segundos para queries
+        }
     }
 }
 
@@ -157,7 +163,16 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
 
-
+# 🚀 CONFIGURACIÓN DE CACHE
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        }
+    }
+}
 
 TEMPLATES = [
     {

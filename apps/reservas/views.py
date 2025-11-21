@@ -17,9 +17,19 @@ logger = logging.getLogger(__name__)
 
 # Create your views here.
 class ReservaViewSet(viewsets.ModelViewSet):
-    queryset = Reserva.objects.all().order_by('-id')
     serializer_class = ReservaSerializer
     permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        """Optimizado con select_related y prefetch_related para evitar N+1 queries"""
+        return Reserva.objects.select_related(
+            'huesped',
+            'hotel',
+            'habitacion'
+        ).prefetch_related(
+            'habitacion__reservas',
+            'folios_estancia'  # Para el método get_folio() del serializer
+        ).order_by('-id')
 
     def perform_create(self, serializer):
         from django.db import connection
@@ -86,7 +96,9 @@ class ReservaViewSet(viewsets.ModelViewSet):
     )
     def reservas_confirmadas(self, request):
         """Devuelve todas las reservas en estado CONFIRMADA, ordenadas por -id."""
-        reservas = Reserva.objects.filter(estado=Reserva.CONFIRMADA).order_by('-id')
+        reservas = Reserva.objects.select_related(
+            'huesped', 'hotel', 'habitacion'
+        ).filter(estado=Reserva.CONFIRMADA).order_by('-id')
         serializer = ReservaSerializer(reservas, many=True)
         return Response(serializer.data)
 
@@ -110,7 +122,9 @@ class ReservaViewSet(viewsets.ModelViewSet):
         except (TypeError, ValueError):
             return Response({'detail': 'id_usuario debe ser un entero'}, status=400)
 
-        reservas = Reserva.objects.filter(
+        reservas = Reserva.objects.select_related(
+            'huesped', 'hotel', 'habitacion'
+        ).filter(
             estado=Reserva.CONFIRMADA,
             huesped__id=usuario_id
         ).order_by('-id')
@@ -125,7 +139,9 @@ class ReservaViewSet(viewsets.ModelViewSet):
     )
     def reservas_realizadas(self, request):
         """Devuelve todas las reservas en estado REALIZADA, ordenadas por -id."""
-        reservas = Reserva.objects.filter(estado=Reserva.REALIZADA).order_by('-id')
+        reservas = Reserva.objects.select_related(
+            'huesped', 'hotel', 'habitacion'
+        ).filter(estado=Reserva.REALIZADA).order_by('-id')
         serializer = ReservaSerializer(reservas, many=True)
         return Response(serializer.data)
 
@@ -149,7 +165,9 @@ class ReservaViewSet(viewsets.ModelViewSet):
         except (TypeError, ValueError):
             return Response({'detail': 'id_usuario debe ser un entero'}, status=400)
 
-        reservas = Reserva.objects.filter(
+        reservas = Reserva.objects.select_related(
+            'huesped', 'hotel', 'habitacion'
+        ).filter(
             estado=Reserva.REALIZADA,
             huesped__id=usuario_id
         ).order_by('-id')

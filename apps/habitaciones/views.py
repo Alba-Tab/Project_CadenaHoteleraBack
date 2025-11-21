@@ -16,8 +16,11 @@ from .services import obtener_habitaciones_reservadas_disponibles, obtener_ranki
 
 
 class HabitacionViewSet(viewsets.ModelViewSet):
-    queryset = Habitacion.objects.all()
     serializer_class = HabitacionSerializer
+    
+    def get_queryset(self):
+        """Optimizado con select_related para evitar N+1 queries"""
+        return Habitacion.objects.select_related('hotel').all()
 
     # Acción personalizada para obtener habitaciones disponibles a partir de una fecha dada
     @action(
@@ -32,7 +35,7 @@ class HabitacionViewSet(viewsets.ModelViewSet):
         # Obtenemos las habitaciones que estarán disponibles a partir de la fecha dada
         habitaciones_reservadas = obtener_habitaciones_reservadas_disponibles(fecha)
         # También incluimos las habitaciones que ya están disponibles
-        habitaciones_disponibles = Habitacion.objects.filter(estado=Habitacion.DISPONIBLE)
+        habitaciones_disponibles = Habitacion.objects.select_related('hotel').filter(estado=Habitacion.DISPONIBLE)
         # Unimos ambas listas
         habitaciones = list(habitaciones_disponibles) + list(habitaciones_reservadas)
         # Serializamos y retornamos la respuesta
@@ -60,7 +63,7 @@ class HabitacionViewSet(viewsets.ModelViewSet):
             )
 
         # Filtrar habitaciones por hotel
-        habitaciones = Habitacion.objects.filter(hotel_id=hotel_id)
+        habitaciones = Habitacion.objects.select_related('hotel').filter(hotel_id=hotel_id)
 
         # Serializar y retornar
         serializer = self.get_serializer(habitaciones, many=True)

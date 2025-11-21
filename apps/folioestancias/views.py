@@ -44,7 +44,9 @@ class FolioEstanciaViewSet(viewsets.ReadOnlyModelViewSet):
     )
     def folios_pendientes(self, request):
         """Devuelve todos los folios en estado PENDIENTE, ordenados por -id."""
-        folios = FolioEstancia.objects.filter(estado=FolioEstancia.PENDIENTE).order_by('-id')
+        folios = FolioEstancia.objects.select_related(
+            'reserva', 'huesped', 'reserva__hotel'
+        ).filter(estado=FolioEstancia.PENDIENTE).order_by('-id')
         serializer = FolioEstanciaSerializer(folios, many=True)
         return Response(serializer.data)
 
@@ -68,7 +70,9 @@ class FolioEstanciaViewSet(viewsets.ReadOnlyModelViewSet):
         except (TypeError, ValueError):
             return Response({'detail': 'id_usuario debe ser un entero'}, status=status.HTTP_400_BAD_REQUEST)
 
-        folios = FolioEstancia.objects.filter(huesped_id=usuario_id, estado=FolioEstancia.PENDIENTE).order_by('-id')
+        folios = FolioEstancia.objects.select_related(
+            'reserva', 'huesped', 'reserva__hotel'
+        ).filter(huesped_id=usuario_id, estado=FolioEstancia.PENDIENTE).order_by('-id')
         serializer = FolioEstanciaSerializer(folios, many=True)
         return Response(serializer.data)
 

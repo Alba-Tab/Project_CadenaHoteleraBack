@@ -81,8 +81,17 @@ class ReservaSerializer(serializers.ModelSerializer):
         return None
 
     def get_folio(self, obj):
-        """Devuelve el folio de estancia asociado"""
-        folio = FolioEstancia.objects.filter(reserva=obj).first()
+        """Devuelve el folio de estancia asociado
+        NOTA: Para optimizar, usar prefetch_related('folios_estancia') en el viewset
+        """
+        # Intentar usar prefetch primero (si está disponible)
+        if hasattr(obj, '_prefetched_objects_cache') and 'folios_estancia' in obj._prefetched_objects_cache:
+            folios = obj.folios_estancia.all()
+            folio = folios[0] if folios else None
+        else:
+            # Fallback: query directa (menos eficiente)
+            folio = FolioEstancia.objects.filter(reserva=obj).first()
+        
         if folio:
             return {
                 "id": folio.id,#type:ignore
