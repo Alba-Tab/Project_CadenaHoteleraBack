@@ -223,76 +223,6 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def logout(self, request):
         """
-        Registro de nuevo usuario
-        POST /api/usuarios/register/
-        Body: {
-            "username": "...",
-            "password": "...",
-            "email": "...",
-            "first_name": "...",  # Opcional
-            "last_name": "...",   # Opcional
-        }
-        """
-        username = request.data.get('username')
-        password = request.data.get('password')
-        email = request.data.get('email')
-        first_name = request.data.get('first_name', '')
-        last_name = request.data.get('last_name', '')
-
-        # Validaciones básicas
-        if not username or not password:
-            return Response({
-                'error': 'Username y password son requeridos'
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        if len(password) < 8:
-            return Response({
-                'error': 'La contraseña debe tener al menos 8 caracteres'
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        # Verificar si el username ya existe
-        if User.objects.filter(username=username).exists():
-            return Response({
-                'error': 'El username ya está en uso'
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        # Verificar si el email ya existe (si se proporciona)
-        if email and User.objects.filter(email=email).exists():
-            return Response({
-                'error': 'El email ya está en uso'
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        # Crear usuario
-        user = User.objects.create_user(
-            username=username,
-            password=password,
-            email=email,
-            first_name=first_name,
-            last_name=last_name,
-        )
-
-        # Asignar rol por defecto (por ejemplo, "Huesped")
-        try:
-            huesped_role = Group.objects.get(name='Huesped')
-            user.groups.add(huesped_role)
-        except Group.DoesNotExist:
-            pass  # Si no existe el rol, continúa sin asignarlo
-
-        # Generar tokens JWT automáticamente
-        refresh = RefreshToken.for_user(user)
-        access_token = refresh.access_token
-
-        serializer = UserSerializer(user)
-        return Response({
-            'access_token': str(access_token),
-            'refresh_token': str(refresh),
-            'user': serializer.data,
-            'message': '¡Registro exitoso!'
-        }, status=status.HTTP_201_CREATED)
-
-    @action(detail=False, methods=['post'])
-    def logout(self, request):
-        """
         Logout de usuario con JWT
         POST /api/usuarios/logout/
         Body: {"refresh_token": "..."}
@@ -364,10 +294,10 @@ class UserViewSet(viewsets.ModelViewSet):
         })
 
     @action(detail=False, methods=['get'])
-    def mis_reservas(self, request):
+    def misreservas(self, request):
         """
         Obtener el historial de reservas del usuario actual
-        GET /api/usuarios/mis-reservas/
+        GET /api/usuarios/misreservas/
         """
         from apps.reservas.models import Reserva
         from apps.reservas.serializers import ReservaSerializer
