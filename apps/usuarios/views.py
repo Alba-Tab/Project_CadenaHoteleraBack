@@ -349,6 +349,60 @@ class UserViewSet(viewsets.ModelViewSet):
             'total_permissions': len(permissions)
         })
 
+    @action(detail=False, methods=['put', 'patch'])
+    def updateprofile(self, request):
+        """
+        Actualizar perfil del usuario actual
+        PUT/PATCH /api/usuarios/updateprofile/
+        Body (multipart/form-data o JSON):
+            - first_name: str (opcional)
+            - last_name: str (opcional)
+            - email: str (opcional)
+            - photo: file (opcional - imagen)
+        """
+        user = request.user
+        
+        # Obtener datos
+        first_name = request.data.get('first_name')
+        last_name = request.data.get('last_name')
+        email = request.data.get('email')
+        photo = request.FILES.get('photo')
+
+        # Validar email único (si se proporciona y es diferente al actual)
+        if email and email != user.email:
+            if User.objects.filter(email=email).exists():
+                return Response({
+                    'error': 'El email ya está en uso'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            user.email = email
+
+        # Actualizar campos de texto
+        if first_name is not None:
+            user.first_name = first_name
+        if last_name is not None:
+            user.last_name = last_name
+
+        # Validar y actualizar foto si se envía
+        if photo:
+            allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+            file_extension = photo.name.lower()[photo.name.rfind('.'):]
+            if file_extension not in allowed_extensions:
+                return Response({
+                    'error': 'Solo se permiten imágenes (jpg, jpeg, png, gif, webp)'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            user.photo = photo
+
+        # Guardar cambios
+        user.save()
+
+        # Serializar y devolver
+        serializer = UserSerializer(user)
+        return Response({
+            'user': serializer.data,
+            'photo_url': user.photo.url if user.photo else None,
+            'message': 'Perfil actualizado exitosamente'
+        })
+
     @action(detail=False, methods=['get'])
     def misreservas(self, request):
         """
