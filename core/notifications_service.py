@@ -2,6 +2,7 @@ import firebase_admin
 from firebase_admin import credentials, messaging
 import logging
 import os
+import json
 from django.conf import settings
 from django.utils import timezone
 
@@ -17,18 +18,27 @@ class NotificationService:
         """Inicializar Firebase Admin SDK - solo una vez"""
         if not cls._initialized and not firebase_admin._apps:
             try:
-                # Ruta del archivo de credenciales
-                cred_path = settings.FIREBASE_CREDENTIAL_PATH
+                # Intentar primero con variable de entorno (producción)
+                if hasattr(settings, 'FIREBASE_CREDENTIALS_JSON') and settings.FIREBASE_CREDENTIALS_JSON:
+                    cred_dict = json.loads(settings.FIREBASE_CREDENTIALS_JSON)
+                    cred = credentials.Certificate(cred_dict)
+                    logger.info("Usando credenciales Firebase desde variable de entorno")
 
-                # Verificar que existe el archivo
-                if not os.path.exists(cred_path):
-                    logger.error("Archivo firebase-credentials.json no encontrado")
+                # Si no, usar archivo local (desarrollo)
+                elif hasattr(settings, 'FIREBASE_CREDENTIAL_PATH'):
+                    cred_path = settings.FIREBASE_CREDENTIAL_PATH
+                    if not os.path.exists(cred_path):
+                        logger.error("Archivo firebase-credentials.json no encontrado")
+                        return False
+                    cred = credentials.Certificate(cred_path)
+                    logger.info("Usando credenciales Firebase desde archivo local")
+
+                else:
+                    logger.error("No se encontraron credenciales de Firebase")
                     return False
 
                 # Inicializar Firebase
-                cred = credentials.Certificate(cred_path)
                 firebase_admin.initialize_app(cred)
-
                 cls._initialized = True
                 logger.info("Firebase Admin SDK inicializado correctamente")
                 return True

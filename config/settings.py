@@ -264,4 +264,10 @@ default_storage._wrapped = S3Boto3Storage() # type: ignore
 
 # Firebase Configuration
 import os
+import json
+
+# Opción 1: Usar archivo JSON local (desarrollo)
 FIREBASE_CREDENTIAL_PATH = os.path.join(BASE_DIR, 'firebase', 'project-hotel-af807-firebase-adminsdk-fbsvc-5fca853de0.json')
+
+# Opción 2: Usar variable de entorno con JSON completo (producción)
+FIREBASE_CREDENTIALS_JSON = env.str('FIREBASE_CREDENTIALS_JSON', default='') #type:ignore

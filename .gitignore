@@ -43,6 +43,9 @@ media/
 .env.*.local
 *.env
 
+# Firebase credentials (NUNCA commitear)
+firebase/*.json
+
 # IDEs
 .vscode/
 .idea/
