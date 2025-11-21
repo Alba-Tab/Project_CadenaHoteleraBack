@@ -128,7 +128,8 @@ class Command(BaseCommand):
                 )
                 return
         else:
-            tenants = TenantModel.objects.all()
+            # Obtener tenants REALES (no el public)
+            tenants = TenantModel.objects.exclude(schema_name="public")
 
         if not tenants:
             self.stdout.write(self.style.ERROR("No hay tenants registrados en core_tenant"))
@@ -142,6 +143,13 @@ class Command(BaseCommand):
                     f"\n>>> Procesando tenant: {tenant.schema_name} ({tenant.name})"
                 )
             )
+
+            # Saltar si por alguna razón aparece public
+            if tenant.schema_name == "public":
+                self.stdout.write(self.style.WARNING(">> Saltando tenant PUBLIC"))
+                continue
+
+            # Cambiar al schema del tenant
             connection.set_schema(tenant.schema_name, True)
             self._seed_tenant(tenant, num_reservas)
 
