@@ -3,6 +3,7 @@ from django.conf import settings
 
 
 class Backup(models.Model):
+    
     """
     Modelo para registrar el historial de backups realizados
     """
@@ -23,7 +24,7 @@ class Backup(models.Model):
         ('error', 'Fallido'),
         ('en_progreso', 'En Progreso'),
     )
-    
+    backups=models.FileField(upload_to='backups/', null=True, blank=True,max_length=500)
     tenant = models.ForeignKey(
         settings.TENANT_MODEL,  # Usar string reference en lugar de get_tenant_model()
         on_delete=models.CASCADE,
@@ -31,7 +32,8 @@ class Backup(models.Model):
         blank=True,
         help_text='Tenant asociado (null para backups completos)'
     )
-    archivo = models.FileField(upload_to='backups/', max_length=500)
+    # CharField para almacenar URL de S3 o ruta local sin procesamiento de Django
+    archivo = models.CharField(max_length=500, help_text='URL de S3 o ruta local del backup')
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='manual')
     backup_type = models.CharField(
         max_length=20, 

@@ -9,7 +9,8 @@ from apps.backups.models import Backup
 from apps.backups.utils import (
     create_backup_directory,
     generate_backup_filename,
-    execute_pg_dump
+    execute_pg_dump,
+    subir_backup_a_s3
 )
 
 
@@ -86,11 +87,38 @@ class Command(BaseCommand):
                 backup_record.mensaje = message
                 backup_record.tamaño_bytes = file_size
                 backup_record.duracion_segundos = duration
+                
+                # Subir a S3 (obligatorio)
+                from django.conf import settings
+                bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', None)
+                if bucket_name:
+                    self.stdout.write('   ☁️  Subiendo a S3...')
+                    s3_url = subir_backup_a_s3(str(output_file), tenant_name=tenant.schema_name)
+                    if s3_url:
+                        backup_record.archivo = s3_url  # Guardar URL de S3
+                        self.stdout.write(self.style.SUCCESS('   ✅ Subido a S3'))
+                        
+                        # Eliminar archivo local después de subir a S3
+                        if output_file.exists():
+                            output_file.unlink()
+                            self.stdout.write(self.style.SUCCESS('   🗑️  Archivo local eliminado'))
+                    else:
+                        self.stdout.write(self.style.ERROR('   ❌ No se pudo subir a S3'))
+                        backup_record.estado = 'error'
+                        backup_record.mensaje = 'Error al subir a S3'
+                else:
+                    self.stdout.write(self.style.ERROR('   ❌ AWS_STORAGE_BUCKET_NAME no configurado'))
+                    backup_record.estado = 'error'
+                    backup_record.mensaje = 'AWS_STORAGE_BUCKET_NAME no configurado'
+                
                 backup_record.save()
                 
-                successful += 1
-                self.stdout.write(self.style.SUCCESS(f'   ✅ {message}'))
-                self.stdout.write(self.style.SUCCESS(f'   ⏱️  Duración: {duration}s'))
+                if backup_record.estado == 'ok':
+                    successful += 1
+                    self.stdout.write(self.style.SUCCESS(f'   ✅ {message}'))
+                    self.stdout.write(self.style.SUCCESS(f'   ⏱️  Duración: {duration}s'))
+                else:
+                    failed += 1
             else:
                 backup_record.estado = 'error'
                 backup_record.mensaje = message

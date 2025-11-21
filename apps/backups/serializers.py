@@ -3,47 +3,61 @@ from .models import Backup
 
 
 class BackupSerializer(serializers.ModelSerializer):
+    backups_url=serializers.SerializerMethodField(read_only=True)
     """
     Serializer para el modelo Backup con información adicional
     """
-    tenant_nombre = serializers.CharField(source='tenant.name', read_only=True, allow_null=True)
-    tenant_schema = serializers.CharField(source='tenant.schema_name', read_only=True, allow_null=True)
+
+    tenant_nombre = serializers.CharField(
+        source="tenant.name", read_only=True, allow_null=True
+    )
+    tenant_schema = serializers.CharField(
+        source="tenant.schema_name", read_only=True, allow_null=True
+    )
     tamaño_mb = serializers.FloatField(read_only=True)
-    tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
-    backup_type_display = serializers.CharField(source='get_backup_type_display', read_only=True)
-    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    tipo_display = serializers.CharField(source="get_tipo_display", read_only=True)
+    backup_type_display = serializers.CharField(
+        source="get_backup_type_display", read_only=True
+    )
+    estado_display = serializers.CharField(source="get_estado_display", read_only=True)
     es_exitoso = serializers.BooleanField(read_only=True)
-    
+
     class Meta:
         model = Backup
         fields = [
-            'id',
-            'tenant',
-            'tenant_nombre',
-            'tenant_schema',
-            'archivo',
-            'tipo',
-            'tipo_display',
-            'backup_type',
-            'backup_type_display',
-            'fecha',
-            'estado',
-            'estado_display',
-            'mensaje',
-            'tamaño_bytes',
-            'tamaño_mb',
-            'duracion_segundos',
-            'es_exitoso',
+            "id",
+            "tenant",
+            "tenant_nombre",
+            "tenant_schema",
+            "archivo",
+            "tipo",
+            "tipo_display",
+            "backup_type",
+            "backup_type_display",
+            "fecha",
+            "estado",
+            "estado_display",
+            "mensaje",
+            "tamaño_bytes",
+            "tamaño_mb",
+            "duracion_segundos",
+            "es_exitoso",
+            "backups",
+            "backups_url",
         ]
         read_only_fields = [
-            'id',
-            'fecha',
-            'estado',
-            'mensaje',
-            'tamaño_bytes',
-            'duracion_segundos',
+            "id",
+            "fecha",
+            "estado",
+            "mensaje",
+            "tamaño_bytes",
+            "duracion_segundos",
+            "backups_url",
         ]
-
+    def get_backups_url(self, obj):
+        if obj.backups :
+            return (obj.backups.url)
+        return None
 
 class BackupStatsSerializer(serializers.Serializer):
     """
@@ -56,4 +70,3 @@ class BackupStatsSerializer(serializers.Serializer):
     newest = serializers.DateTimeField(allow_null=True)
     exitosos = serializers.IntegerField(required=False)
     fallidos = serializers.IntegerField(required=False)
-
