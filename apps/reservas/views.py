@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 import logging
+import threading
 
 from apps.habitaciones.models import Habitacion
 from apps.reservas.models import Reserva
@@ -21,23 +22,36 @@ class ReservaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         data = serializer.validated_data
+        logger.info(f"⏱️ Inicio perform_create - data: {data}")
+
         reserva = procesar_reserva(data)
         serializer.instance = reserva
+        logger.info(f"⏱️ Reserva creada: ID={reserva.id}")
 
-        # 🔔 Enviar notificación push DESPUÉS de crear la reserva (no bloquea DB)
+        # 🔔 Enviar notificación push en BACKGROUND (no bloquea respuesta)
         huesped = reserva.huesped
+        logger.info(f"🔍 DEBUG: huesped={huesped}, huesped.id={huesped.id if huesped else 'None'}, token={'[' + huesped.fcm_token[:20] + '...]' if huesped and huesped.fcm_token else 'None'}")
+
         if huesped and huesped.fcm_token:
-            try:
-                NotificationService.send_reserva_notification(
-                    usuario=huesped,
-                    reserva_id=reserva.id,
-                    mensaje=f"Tu reserva en {reserva.hotel.nombre} del {reserva.fecha_entrada} al {reserva.fecha_salida} ha sido confirmada",
-                    notification_type='confirmacion'
-                )
-                logger.info(f"✅ Notificación enviada al huésped {huesped.username}")
-            except Exception as e:
-                # No romper la respuesta si falla la notificación
-                logger.error(f"⚠️ Error enviando notificación: {str(e)}")
+            # ✅ Ejecutar en thread separado (no espera que termine)
+            def enviar_notificacion_background():
+                try:
+                    logger.info("🔔 Thread: Enviando notificación push...")
+                    NotificationService.send_reserva_notification(
+                        usuario=huesped,
+                        reserva_id=reserva.id,
+                        mensaje=f"Tu reserva en {reserva.hotel.nombre} del {reserva.fecha_entrada} al {reserva.fecha_salida} ha sido confirmada",
+                        notification_type='confirmacion'
+                    )
+                    logger.info(f"✅ Thread: Notificación enviada al huésped {huesped.username}")
+                except Exception as e:
+                    logger.error(f"⚠️ Thread: Error enviando notificación: {str(e)}")
+
+            thread = threading.Thread(target=enviar_notificacion_background, daemon=True)
+            thread.start()
+            logger.info("🚀 Thread de notificación iniciado - respondiendo al cliente")
+        else:
+            logger.warning(f"⚠️ No se envió notificación - Huésped sin token FCM")
 
     def perform_update(self, serializer):
         data = serializer.validated_data
